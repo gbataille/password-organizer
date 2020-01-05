@@ -1,1 +1,3 @@
 boto3 ~= 1.10
+PyInquirer ~= 1.0
+pyfiglet
