@@ -4,3 +4,4 @@ reports/*.txt
 .tox
 *.egg-info
 html
+build

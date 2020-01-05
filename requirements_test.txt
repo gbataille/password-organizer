@@ -9,3 +9,4 @@ neovim
 pylint
 setuptools
 sure
+tox
