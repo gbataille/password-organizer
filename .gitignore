@@ -1,0 +1,6 @@
+reports/*.txt
+.coverage
+.mypy_cache
+.tox
+*.egg-info
+html
