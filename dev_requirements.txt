@@ -1,0 +1,11 @@
+factory-boy
+faker
+flake8
+ipdb
+ipython
+moto
+mypy
+neovim
+pylint
+setuptools
+sure
