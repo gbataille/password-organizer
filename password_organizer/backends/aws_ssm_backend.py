@@ -1,7 +1,8 @@
 import boto3
 from typing import List
 
-from . import Backend, MissingAuthentication
+from exceptions import MissingAuthentication
+from . import Backend
 
 
 class AWSSSMBackend(Backend):

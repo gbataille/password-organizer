@@ -1,7 +1,8 @@
 from enum import Enum
 from pyfiglet import Figlet
 
-from .backends import AWSSSMBackend, MissingAuthentication
+from exceptions import InterruptProgramException
+from .backends import AWSSSMBackend
 
 
 BACK = 'Back...'
@@ -22,9 +23,9 @@ def main():
 
     try:
         backend = AWSSSMBackend()
-    except MissingAuthentication as e:
-        print(f"Error: {str(e)}")
-        return e.EXIT_CODE
+    except InterruptProgramException as e:
+        print(f"Error: \n\t{e.display_message}")
+        return e.exit_code.value
 
     backend.title()
     return backend.run()

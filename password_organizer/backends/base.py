@@ -4,11 +4,6 @@ from PyInquirer import prompt, Separator
 from typing import List
 
 
-class MissingAuthentication(Exception):
-    """ Failure to initialize a backend due to missing credentials """
-    EXIT_CODE = 100
-
-
 BACK = 'Back...'
 
 
