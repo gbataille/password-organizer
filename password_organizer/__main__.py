@@ -1,6 +1,6 @@
 import sys
 
-from . import main
+from .password_organizer import main
 
 
 if __name__ == "__main__":
