@@ -11,6 +11,26 @@ class RootAction(Enum):
     LIST_PASSWORDS = 'List passwords'
 
 
+ROOT_ACTION_MAPPING = {
+    RootAction.LIST_PASSWORDS: "_handle_list_password_action"
+}
+""" Those methods take no parameter """
+
+assert len(ROOT_ACTION_MAPPING.keys()) == len(RootAction)
+
+
+class PasswordAction(Enum):
+    RETRIEVE = 'Retrieve password value'
+
+
+PASSWORD_ACTION_MAPPING = {
+    PasswordAction.RETRIEVE: "_handle_retrieve_password"
+}
+""" Those methods take the password key as first and unique parameter """
+
+assert len(PASSWORD_ACTION_MAPPING.keys()) == len(PasswordAction)
+
+
 class Backend(ABC):
 
     @abstractmethod
@@ -37,6 +57,8 @@ class Backend(ABC):
     def main_menu(self) -> None:
         """
         Displays the backend main menu
+
+        By default, proposes all the `RootAction` and call their handler
         """
         questions = [
             {
@@ -51,8 +73,9 @@ class Backend(ABC):
         ]
 
         answers = prompt(questions)
-        if answers['action'] == RootAction.LIST_PASSWORDS:
-            self._handle_list_password_action()
+        action = answers['action']
+        action_method = getattr(self, ROOT_ACTION_MAPPING[action])
+        action_method()
 
     def _handle_list_password_action(self) -> None:
         password_keys = self.list_password_keys()
@@ -70,4 +93,32 @@ class Backend(ABC):
         if password_key == BACK:
             self.main_menu()
         else:
-            print(answers['password_key'])
+            self.password_menu(password_key)
+
+    def password_menu(self, password_key: str) -> None:
+        """
+        Displays the menu actions for a specific passwor
+
+        By default, proposes all the `PasswordAction` and call their handler
+        """
+        questions = [
+            {
+                'type': 'list',
+                'name': 'password_action',
+                'message': f'What do you want to do with this password ({password_key})?',
+                'choices': [
+                    {'name': member.value, 'value': member} for member in PasswordAction
+                ] + [Separator(), {'name': BACK, 'value': BACK}],
+            }
+        ]
+        answers = prompt(questions)
+        password_action = answers['password_action']
+        if password_action == BACK:
+            self.main_menu()
+        else:
+            action_method = getattr(self, PASSWORD_ACTION_MAPPING[password_action])
+            action_method(password_key)
+
+    def _handle_retrieve_password(self, password_key: str) -> None:
+        password_value = self.retrieve_password(password_key)
+        print(f'\nPassword {password_key}: {password_value}\n')
