@@ -1,10 +1,19 @@
 from abc import ABC, abstractmethod
+from enum import Enum
+from PyInquirer import prompt, Separator
 from typing import List
 
 
 class MissingAuthentication(Exception):
     """ Failure to initialize a backend due to missing credentials """
     EXIT_CODE = 100
+
+
+BACK = 'Back...'
+
+
+class RootAction(Enum):
+    LIST_PASSWORDS = 'List passwords'
 
 
 class Backend(ABC):
@@ -29,3 +38,50 @@ class Backend(ABC):
     @abstractmethod
     def store_password(self, password: str, key: str) -> None:
         """ Stores the password under the given key in the backend """
+
+    def run(self) -> int:
+        """
+        Runs the backend
+
+        Returns
+        -------
+        int
+            The status code to be returned by the unix process
+        """
+        questions = [
+            {
+                'type': 'list',
+                'name': 'action',
+                'message': 'What do you want to do?',
+                'choices': [
+                    {'name': member.value, 'value': member} for member in RootAction
+                ],
+                'default': 0,
+            }
+        ]
+
+        answers = prompt(questions)
+        if answers['action'] == RootAction.LIST_PASSWORDS:
+            self._handle_list_password_action()
+
+        return 0
+
+    def _handle_list_password_action(self) -> int:
+        password_keys = self.list_password_keys()
+
+        questions = [
+            {
+                'type': 'list',
+                'name': 'password_key',
+                'message': 'Which password do you want to work on?',
+                'choices': password_keys + [Separator(), BACK],
+            }
+        ]
+        answers = prompt(questions)
+        password_key = answers['password_key']
+        if password_key == BACK:
+            return self.run()
+        else:
+            print(answers['password_key'])
+
+        return 0
