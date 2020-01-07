@@ -34,14 +34,9 @@ class Backend(ABC):
     def store_password(self, password: str, key: str) -> None:
         """ Stores the password under the given key in the backend """
 
-    def run(self) -> int:
+    def main_menu(self) -> None:
         """
-        Runs the backend
-
-        Returns
-        -------
-        int
-            The status code to be returned by the unix process
+        Displays the backend main menu
         """
         questions = [
             {
@@ -59,9 +54,7 @@ class Backend(ABC):
         if answers['action'] == RootAction.LIST_PASSWORDS:
             self._handle_list_password_action()
 
-        return 0
-
-    def _handle_list_password_action(self) -> int:
+    def _handle_list_password_action(self) -> None:
         password_keys = self.list_password_keys()
 
         questions = [
@@ -75,8 +68,6 @@ class Backend(ABC):
         answers = prompt(questions)
         password_key = answers['password_key']
         if password_key == BACK:
-            return self.run()
+            self.main_menu()
         else:
             print(answers['password_key'])
-
-        return 0
