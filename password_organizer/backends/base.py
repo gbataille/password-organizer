@@ -50,9 +50,15 @@ class Backend(ABC):
     def retrieve_password(self, key: str) -> str:
         """ Gets the password value for a given password key """
 
+    # TODO - gbataille: separate create and update
     @abstractmethod
     def store_password(self, password: str, key: str) -> None:
         """ Stores the password under the given key in the backend """
+
+    # TODO - gbataille:
+    # @abstractmethod
+    # def delete_password(self, password_key: str) -> None:
+    #     """ Deletes a password from the backend """
 
     def main_menu(self) -> None:
         """
@@ -91,6 +97,7 @@ class Backend(ABC):
         answers = prompt(questions)
         password_key = answers['password_key']
         if password_key == BACK:
+            print('\n')
             self.main_menu()
         else:
             self.password_menu(password_key)
@@ -114,6 +121,7 @@ class Backend(ABC):
         answers = prompt(questions)
         password_action = answers['password_action']
         if password_action == BACK:
+            print('\n')
             self.main_menu()
         else:
             action_method = getattr(self, PASSWORD_ACTION_MAPPING[password_action])

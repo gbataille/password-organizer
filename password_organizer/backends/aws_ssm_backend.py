@@ -17,7 +17,7 @@ class AWSSSMBackend(Backend):
         if self.ssm_cli._request_signer._credentials is None:
             # Note that this uses botocore internals. Might change.
             # TODO - gbataille: test this behavior for changes
-            raise MissingAuthentication("Could not find any AWS credentials")
+            raise MissingAuthentication()
 
     def title(self) -> None:
         print(f"""
