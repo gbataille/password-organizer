@@ -79,10 +79,13 @@ class Backend(ABC):
             }
         ]
 
-        answers = prompt(questions)
-        action = answers['action']
-        action_method = getattr(self, ROOT_ACTION_MAPPING[action])
-        action_method()
+        try:
+            answers = prompt(questions)
+            action = answers['action']
+            action_method = getattr(self, ROOT_ACTION_MAPPING[action])
+            action_method()
+        except ValueError:
+            print("\nInterrupted\nGoodbye\n")
 
     def _handle_list_password_action(self) -> None:
         password_keys = self.list_password_keys()

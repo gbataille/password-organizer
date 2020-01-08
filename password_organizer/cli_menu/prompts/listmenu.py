@@ -12,9 +12,10 @@ from prompt_toolkit.styles import Style
 from ..separator import Separator
 
 default_style = Style.from_dict({
+    'set-cursor-position': '#5F819D bold',
     'separator': '#6C6C6C',
     'question-mark': '#5F819D',
-    'selected': '',  # default
+    'selected': '#5F819D bold',  # default
     'pointer': '#FF9D00 bold',  # AWS orange
     'instruction': '',  # default
     'answer': '#FF9D00 bold',  # AWS orange
@@ -63,7 +64,11 @@ class InquirerControl(FormattedTextControl):
             selected = (index == self.selected_option_index)
 
             if selected:
-                tokens.append(('class:set-cursor-position', ''))
+                tokens.append(('class:set-cursor-position', '> '))
+            else:
+                # For alignment
+                tokens.append(('', '  '))
+
             if choice[2]:  # disabled
                 tokens.append(('class:selected' if selected else '',
                                '- %s (%s)' % (choice[0], choice[2])))
@@ -125,7 +130,7 @@ def question(message, **kwargs):
     @kb.add(Keys.ControlQ, eager=True)
     @kb.add(Keys.ControlC, eager=True)
     def _(event):
-        raise KeyboardInterrupt()
+        event.app.exit(exception=ValueError())
 
     @kb.add(Keys.Down, eager=True)
     def move_cursor_down(_event):        # pylint:disable=unused-variable
