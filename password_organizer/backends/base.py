@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from PyInquirer import prompt, Separator
 from typing import List
+
+from ..cli_menu import prompt, Separator
 
 
 BACK = 'Back...'
@@ -68,7 +69,7 @@ class Backend(ABC):
         """
         questions = [
             {
-                'type': 'list',
+                'type': 'listmenu',
                 'name': 'action',
                 'message': 'What do you want to do?',
                 'choices': [
@@ -88,7 +89,7 @@ class Backend(ABC):
 
         questions = [
             {
-                'type': 'list',
+                'type': 'listmenu',
                 'name': 'password_key',
                 'message': 'Which password do you want to work on?',
                 'choices': password_keys + [Separator(), BACK],
@@ -110,7 +111,7 @@ class Backend(ABC):
         """
         questions = [
             {
-                'type': 'list',
+                'type': 'listmenu',
                 'name': 'password_action',
                 'message': f'What do you want to do with this password ({password_key})?',
                 'choices': [
