@@ -12,13 +12,13 @@ from prompt_toolkit.styles import Style
 from ..separator import Separator
 
 default_style = Style.from_dict({
-    'set-cursor-position': '#5F819D bold',
+    'set-cursor-position':  '#FF9D00 bold',
     'separator': '#6C6C6C',
-    'question-mark': '#5F819D',
-    'selected': '#5F819D bold',  # default
-    'pointer': '#FF9D00 bold',  # AWS orange
-    'instruction': '',  # default
-    'answer': '#FF9D00 bold',  # AWS orange
+    'question-mark': 'noinherit #5F819D bold',
+    'selected': 'noinherit #5F819D bold',
+    'pointer': '#FF9D00 bold',
+    'instruction': '',
+    'answer': '#FF9D00 bold',
     'question': 'bold',
 })
 
@@ -64,10 +64,10 @@ class InquirerControl(FormattedTextControl):
             selected = (index == self.selected_option_index)
 
             if selected:
-                tokens.append(('class:set-cursor-position', '> '))
+                tokens.append(('class:set-cursor-position', ' \u276f '))
             else:
                 # For alignment
-                tokens.append(('', '  '))
+                tokens.append(('', '   '))
 
             if choice[2]:  # disabled
                 tokens.append(('class:selected' if selected else '',
@@ -161,5 +161,5 @@ def question(message, **kwargs):
         layout=layout,
         key_bindings=kb,
         mouse_support=True,
-        style=default_style
+        style=default_style,
     )
