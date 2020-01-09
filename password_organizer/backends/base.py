@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from prompt_toolkit import print_formatted_text, HTML
 from prompt_toolkit.styles import Style
-from typing import List
+from typing import Any, List
 
 from ..cli_menu import prompt, Separator
 
@@ -92,12 +92,14 @@ class Backend(ABC):
     def _handle_list_password_action(self) -> None:
         password_keys = self.list_password_keys()
 
+        password_action_choices: List[Any] = password_keys
+        password_action_choices.extend([Separator(), BACK])
         questions = [
             {
                 'type': 'listmenu',
                 'name': 'password_key',
                 'message': 'Which password do you want to work on?',
-                'choices': password_keys + [Separator(), BACK],
+                'choices': password_action_choices,
             }
         ]
         answers = prompt(questions)
@@ -114,14 +116,17 @@ class Backend(ABC):
 
         By default, proposes all the `PasswordAction` and call their handler
         """
+        password_menu_choices: List[Any] = [
+            {'name': member.value, 'value': member} for member in PasswordAction
+        ]
+        password_menu_choices.extend([Separator(), {'name': BACK, 'value': BACK}])
+
         questions = [
             {
                 'type': 'listmenu',
                 'name': 'password_action',
                 'message': f'What do you want to do with this password ({password_key})?',
-                'choices': [
-                    {'name': member.value, 'value': member} for member in PasswordAction
-                ] + [Separator(), {'name': BACK, 'value': BACK}],
+                'choices': password_menu_choices,
             }
         ]
         answers = prompt(questions)
