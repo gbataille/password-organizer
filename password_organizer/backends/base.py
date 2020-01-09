@@ -24,10 +24,12 @@ assert len(ROOT_ACTION_MAPPING.keys()) == len(RootAction)
 
 class PasswordAction(Enum):
     RETRIEVE = 'Retrieve password value'
+    UPDATE = 'Update password value'
 
 
 PASSWORD_ACTION_MAPPING = {
-    PasswordAction.RETRIEVE: "_handle_retrieve_password"
+    PasswordAction.RETRIEVE: "_handle_retrieve_password",
+    PasswordAction.UPDATE: "_handle_update_password",
 }
 """ Those methods take the password key as first and unique parameter """
 
@@ -55,7 +57,7 @@ class Backend(ABC):
 
     # TODO - gbataille: separate create and update
     @abstractmethod
-    def store_password(self, password: str, key: str) -> None:
+    def store_password(self, key: str, password_value: str) -> None:
         """ Stores the password under the given key in the backend """
 
     # TODO - gbataille:
@@ -162,3 +164,19 @@ class Backend(ABC):
             }),
         )
         self.main_menu()
+
+    def _handle_update_password(self, password_key: str) -> None:
+        questions = [
+            {
+                'type': 'password',
+                'name': 'new_password_value',
+                'message': (
+                    'Please enter the new value for the password. '
+                    'This will overwrite the old password value (which will be lost)'
+                ),
+            }
+        ]
+        answers = prompt(questions)
+        new_password_value = answers['new_password_value']
+        self.store_password(password_key, new_password_value)
+        self.password_menu(password_key)
