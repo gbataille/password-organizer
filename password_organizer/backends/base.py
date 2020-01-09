@@ -139,6 +139,21 @@ class Backend(ABC):
             action_method(password_key)
 
     def _handle_retrieve_password(self, password_key: str) -> None:
+        questions = [
+            {
+                'type': 'confirm',
+                'name': 'confirmation',
+                'message': (
+                    f'Are you sure you want to retrieve {password_key}? '
+                    'Its value will be displayed in clear on the screen'
+                ),
+            }
+        ]
+        answers = prompt(questions)
+        confirmation = answers['confirmation']
+        if not confirmation:
+            self.password_menu(password_key)
+
         password_value = self.retrieve_password(password_key)
         print_formatted_text(
             HTML(f'\n<title>Password {password_key}:</title> {password_value}\n'),
