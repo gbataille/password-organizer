@@ -40,7 +40,7 @@ def question(message, **kwargs):
     @kb.add(Keys.ControlQ, eager=True)
     @kb.add(Keys.ControlC, eager=True)
     def _(event):
-        raise KeyboardInterrupt()
+        event.app.exit(exception=KeyboardInterrupt())
 
     @kb.add('n')
     @kb.add('N')

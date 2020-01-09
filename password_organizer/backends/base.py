@@ -88,7 +88,7 @@ class Backend(ABC):
             action = answers['action']
             action_method = getattr(self, ROOT_ACTION_MAPPING[action])
             action_method()
-        except ValueError:
+        except KeyboardInterrupt:
             print("\nInterrupted\nGoodbye\n")
 
     def _handle_list_password_action(self) -> None:
@@ -171,9 +171,10 @@ class Backend(ABC):
                 'type': 'password',
                 'name': 'new_password_value',
                 'message': (
-                    'Please enter the new value for the password. '
-                    'This will overwrite the old password value (which will be lost)'
+                    'Please enter the new value for the password.\n'
+                    '  This will overwrite the old password value (which will be lost):'
                 ),
+                'multiline': True,
             }
         ]
         answers = prompt(questions)

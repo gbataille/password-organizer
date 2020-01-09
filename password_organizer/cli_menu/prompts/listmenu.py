@@ -118,7 +118,7 @@ def question(message, **kwargs):
     @kb.add(Keys.ControlQ, eager=True)
     @kb.add(Keys.ControlC, eager=True)
     def _(event):
-        event.app.exit(exception=ValueError())
+        event.app.exit(exception=KeyboardInterrupt())
 
     @kb.add(Keys.Down, eager=True)
     def move_cursor_down(_event):        # pylint:disable=unused-variable

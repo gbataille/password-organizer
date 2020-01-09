@@ -64,6 +64,4 @@ def prompt(questions, answers=None, **kwargs):
         except AttributeError as e:
             print(e)
             raise ValueError('No question type \'%s\'' % question_type)
-        except KeyboardInterrupt:
-            return {}
     return answers
