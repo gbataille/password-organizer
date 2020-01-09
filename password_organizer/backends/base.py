@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
+from prompt_toolkit import print_formatted_text, HTML
+from prompt_toolkit.styles import Style
 from typing import List
 
 from ..cli_menu import prompt, Separator
@@ -133,4 +135,10 @@ class Backend(ABC):
 
     def _handle_retrieve_password(self, password_key: str) -> None:
         password_value = self.retrieve_password(password_key)
-        print(f'\nPassword {password_key}: {password_value}\n')
+        print_formatted_text(
+            HTML(f'\n<title>Password {password_key}:</title> {password_value}\n'),
+            style=Style.from_dict({
+                'title': '#FF9D00 bold',
+            }),
+        )
+        self.main_menu()
