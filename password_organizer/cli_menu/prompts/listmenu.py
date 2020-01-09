@@ -6,20 +6,9 @@ from prompt_toolkit.layout import Layout
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.containers import ConditionalContainer, HSplit, Window
 from prompt_toolkit.layout.dimension import LayoutDimension as D
-from prompt_toolkit.styles import Style
 
 from ..separator import Separator
-
-default_style = Style.from_dict({
-    'set-cursor-position':  '#FF9D00 bold',
-    'separator': '#6C6C6C',
-    'question-mark': 'noinherit #5F819D bold',
-    'selected': 'noinherit #5F819D bold',
-    'pointer': '#FF9D00 bold',
-    'instruction': '',
-    'answer': '#FF9D00 bold',
-    'question': 'bold',
-})
+from .common import default_style
 
 
 class InquirerControl(FormattedTextControl):
