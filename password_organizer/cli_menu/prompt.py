@@ -1,5 +1,5 @@
 from . import prompts
-from .prompts import confirm, listmenu  # noqa  # pylint:disable=unused-import
+from .prompts import confirm, listmenu, password, std_input  # noqa  # pylint:disable=unused-import
 
 
 def prompt(questions, answers=None, **kwargs):
