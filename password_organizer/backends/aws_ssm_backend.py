@@ -45,3 +45,6 @@ using default KMS encryption keys
             Type='SecureString',
             Overwrite=True,
         )
+
+    def delete_password(self, password_key: str) -> None:
+        self.ssm_cli.delete_parameter(Name=password_key)

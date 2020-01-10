@@ -22,11 +22,13 @@ assert len(ROOT_ACTION_MAPPING.keys()) == len(RootAction)
 class PasswordAction(Enum):
     RETRIEVE = 'Retrieve password value'
     UPDATE = 'Update password value'
+    DELETE = 'Delete password'
 
 
 PASSWORD_ACTION_MAPPING = {
     PasswordAction.RETRIEVE: "_handle_retrieve_password",
     PasswordAction.UPDATE: "_handle_update_password",
+    PasswordAction.DELETE: "_handle_delete_password",
 }
 """ Those methods take the password key as first and unique parameter """
 
@@ -57,10 +59,9 @@ class Backend(ABC):
     def store_password(self, key: str, password_value: str) -> None:
         """ Stores the password under the given key in the backend """
 
-    # TODO - gbataille:
-    # @abstractmethod
-    # def delete_password(self, password_key: str) -> None:
-    #     """ Deletes a password from the backend """
+    @abstractmethod
+    def delete_password(self, password_key: str) -> None:
+        """ Deletes a password from the backend """
 
     def get_root_menu_actions(self) -> List[Union[str, Dict[str, Any]]]:
         """
@@ -176,3 +177,15 @@ class Backend(ABC):
         ))
         self.store_password(password_key, new_password_value)
         self.password_menu(password_key)
+
+    def _handle_delete_password(self, password_key: str) -> None:
+        confirmation = confirmation_menu((
+            f'Are you sure you want to delete password {password_key}? '
+            'This operation cannot be undone'
+        ))
+
+        if not confirmation:
+            return self.password_menu(password_key)
+
+        self.delete_password(password_key)
+        self.main_menu()
