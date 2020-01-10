@@ -1,7 +1,7 @@
 from copy import deepcopy
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
-from typing import Dict, List, Optional, TypeVar, Union
+from typing import Callable, Dict, List, Optional, TypeVar, Union
 
 from .cli_menu import prompt, Separator
 
@@ -13,6 +13,7 @@ class UserExit(Exception):
 T = TypeVar('T')
 Choice = Union[T, Dict[str, T], Separator, str]
 
+BACK = 'Back...'
 QUIT = 'Exit'
 
 
@@ -20,9 +21,10 @@ def list_choice_menu(
     choices: List[Choice],
     message: str,
     default: Optional[Union[int, T]] = None,
+    back: Optional[Callable] = None,
     quit_option_text: Optional[str] = QUIT,
     use_ctrl_c_to_quit: bool = True,
-) -> T:
+) -> Optional[T]:
     """
     Displays a list menu
 
@@ -34,6 +36,9 @@ def list_choice_menu(
         The question to be displayed at the top of the choice menu
     default: Optional[Union[int, T]]
         The default answer
+    back: Optional[Callable[]]
+        The function to call if the user choses to go back
+        Leave blank if you don't want a "BACK" option
     quit_option_text: Optional[str]
         The text to display for the bottom "QUIT" option
         If you don't want a "QUIT" option, set this parameter to None
@@ -44,8 +49,9 @@ def list_choice_menu(
 
     Returns
     -------
-    T
-        The choice that the user made
+    Optional[T]
+        - The choice that the user made
+        - None if he chose to go back
 
     Raises
     ------
@@ -64,6 +70,8 @@ def list_choice_menu(
             quit_option_text += ' (Ctrl+c)'
 
     menu_choices = deepcopy(choices)
+    if back:
+        menu_choices.extend([Separator(), BACK])
     if quit_option_text:
         menu_choices.extend([Separator(), quit_option_text])
 
@@ -82,5 +90,8 @@ def list_choice_menu(
     action = answers['action']
     if action == quit_option_text:
         raise UserExit()
+    if action == BACK:
+        back()    # type:ignore  # mypy can't see that action can't be BACK if back is NONE
+        return None
     else:
         return action

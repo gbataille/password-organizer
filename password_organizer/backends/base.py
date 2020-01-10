@@ -2,14 +2,10 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from prompt_toolkit import print_formatted_text, HTML
 from prompt_toolkit.styles import Style
-from typing import List
+from typing import List, Optional
 
-from ..cli_menu import prompt, Separator
+from ..cli_menu import prompt
 from ..menu import list_choice_menu, Choice, UserExit
-
-
-BACK = 'Back...'
-QUIT = 'Exit (Ctrl+c)'
 
 
 class RootAction(Enum):
@@ -77,7 +73,11 @@ class Backend(ABC):
             {'name': member.value, 'value': member} for member in RootAction
         ]
         try:
-            action: RootAction = list_choice_menu(main_menu_choices, 'What do you want to do?', 0)
+            action: Optional[RootAction] = list_choice_menu(
+                main_menu_choices, 'What do you want to do?', 0
+            )
+            if action is None:
+                return
             action_method = getattr(self, ROOT_ACTION_MAPPING[action])
             action_method()
         except UserExit:
@@ -87,16 +87,15 @@ class Backend(ABC):
         password_keys = self.list_password_keys()
 
         password_action_choices: List[Choice[str]] = password_keys      # type:ignore
-        password_action_choices.extend([Separator(), BACK])
-        password_key: str = list_choice_menu(
+        password_key: Optional[str] = list_choice_menu(
             password_action_choices,
             'Which password do you want to work on?',
+            back=self.main_menu,
         )
-        if password_key == BACK:
-            print('\n')
-            self.main_menu()
-        else:
-            self.password_menu(password_key)
+        if password_key is None:
+            return
+
+        self.password_menu(password_key)
 
     def password_menu(self, password_key: str) -> None:
         """
@@ -107,18 +106,17 @@ class Backend(ABC):
         password_menu_choices: List[Choice[PasswordAction]] = [
             {'name': member.value, 'value': member} for member in PasswordAction
         ]
-        password_menu_choices.extend([Separator(), BACK])
 
-        password_action: PasswordAction = list_choice_menu(
+        password_action: Optional[PasswordAction] = list_choice_menu(
             password_menu_choices,
             f'What do you want to do with this password ({password_key})?',
+            back=self.main_menu
         )
-        if password_action == BACK:
-            print('\n')
-            self.main_menu()
-        else:
-            action_method = getattr(self, PASSWORD_ACTION_MAPPING[password_action])
-            action_method(password_key)
+        if password_action is None:
+            return
+
+        action_method = getattr(self, PASSWORD_ACTION_MAPPING[password_action])
+        action_method(password_key)
 
     def _handle_retrieve_password(self, password_key: str) -> None:
         questions = [
