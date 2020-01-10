@@ -1,4 +1,4 @@
-reports/*.txt
+reports/*
 .coverage
 .mypy_cache
 .tox
