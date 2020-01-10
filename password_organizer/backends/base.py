@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from prompt_toolkit import print_formatted_text, HTML
 from prompt_toolkit.styles import Style
-from typing import Any, List
+from typing import List
 
 from ..cli_menu import prompt, Separator
 from ..menu import list_choice_menu, Choice, UserExit
@@ -80,7 +80,7 @@ class Backend(ABC):
             action: RootAction = list_choice_menu(main_menu_choices, 'What do you want to do?', 0)
             action_method = getattr(self, ROOT_ACTION_MAPPING[action])
             action_method()
-        except (KeyboardInterrupt, UserExit):
+        except UserExit:
             print("\nGoodbye\n")
 
     def _handle_list_password_action(self) -> None:

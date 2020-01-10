@@ -84,6 +84,7 @@ def question(message, **kwargs):
     choices = kwargs.pop('choices', None)
     default = kwargs.pop('default', 0)
     qmark = kwargs.pop('qmark', '?')
+    kb = kwargs.pop('keybindings', KeyBindings())
 
     ic = InquirerControl(choices, default=default)
 
@@ -112,13 +113,12 @@ def question(message, **kwargs):
         ])
     )
 
-    # key bindings
-    kb = KeyBindings()
-
     @kb.add(Keys.ControlQ, eager=True)
-    @kb.add(Keys.ControlC, eager=True)
-    def _(event):
+    def exit(event):
         event.app.exit(exception=KeyboardInterrupt())
+
+    if not kb.get_bindings_for_keys((Keys.ControlC,)):
+        kb.add(Keys.ControlC, eager=True)(exit)
 
     @kb.add(Keys.Down, eager=True)
     def move_cursor_down(_event):        # pylint:disable=unused-variable
