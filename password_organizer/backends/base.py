@@ -5,6 +5,7 @@ from prompt_toolkit.styles import Style
 from typing import Any, List
 
 from ..cli_menu import prompt, Separator
+from ..menu import list_choice_menu, Choice, UserExit
 
 
 BACK = 'Back...'
@@ -72,52 +73,28 @@ class Backend(ABC):
 
         By default, proposes all the `RootAction` and call their handler
         """
-        main_menu_choices: List[Any] = [
+        main_menu_choices: List[Choice[RootAction]] = [
             {'name': member.value, 'value': member} for member in RootAction
         ]
-        main_menu_choices.extend([Separator(), QUIT])
-        questions = [
-            {
-                'type': 'listmenu',
-                'name': 'action',
-                'message': 'What do you want to do?',
-                'choices': main_menu_choices,
-                'default': 0,
-            }
-        ]
-
         try:
-            answers = prompt(questions)
-            action = answers['action']
-            if action == QUIT:
-                raise KeyboardInterrupt()
-            else:
-                action_method = getattr(self, ROOT_ACTION_MAPPING[action])
-                action_method()
-        except KeyboardInterrupt:
+            action: RootAction = list_choice_menu(main_menu_choices, 'What do you want to do?', 0)
+            action_method = getattr(self, ROOT_ACTION_MAPPING[action])
+            action_method()
+        except (KeyboardInterrupt, UserExit):
             print("\nGoodbye\n")
 
     def _handle_list_password_action(self) -> None:
         password_keys = self.list_password_keys()
 
-        password_action_choices: List[Any] = password_keys
+        password_action_choices: List[Choice[str]] = password_keys      # type:ignore
         password_action_choices.extend([Separator(), BACK])
-        password_action_choices.extend([Separator(), QUIT])
-        questions = [
-            {
-                'type': 'listmenu',
-                'name': 'password_key',
-                'message': 'Which password do you want to work on?',
-                'choices': password_action_choices,
-            }
-        ]
-        answers = prompt(questions)
-        password_key = answers['password_key']
+        password_key: str = list_choice_menu(
+            password_action_choices,
+            'Which password do you want to work on?',
+        )
         if password_key == BACK:
             print('\n')
             self.main_menu()
-        elif password_key == QUIT:
-            raise KeyboardInterrupt()
         else:
             self.password_menu(password_key)
 
@@ -127,27 +104,18 @@ class Backend(ABC):
 
         By default, proposes all the `PasswordAction` and call their handler
         """
-        password_menu_choices: List[Any] = [
+        password_menu_choices: List[Choice[PasswordAction]] = [
             {'name': member.value, 'value': member} for member in PasswordAction
         ]
         password_menu_choices.extend([Separator(), BACK])
-        password_menu_choices.extend([Separator(), QUIT])
 
-        questions = [
-            {
-                'type': 'listmenu',
-                'name': 'password_action',
-                'message': f'What do you want to do with this password ({password_key})?',
-                'choices': password_menu_choices,
-            }
-        ]
-        answers = prompt(questions)
-        password_action = answers['password_action']
+        password_action: PasswordAction = list_choice_menu(
+            password_menu_choices,
+            f'What do you want to do with this password ({password_key})?',
+        )
         if password_action == BACK:
             print('\n')
             self.main_menu()
-        elif password_action == QUIT:
-            raise KeyboardInterrupt()
         else:
             action_method = getattr(self, PASSWORD_ACTION_MAPPING[password_action])
             action_method(password_key)
