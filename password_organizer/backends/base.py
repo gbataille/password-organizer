@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from prompt_toolkit import print_formatted_text, HTML
 from prompt_toolkit.styles import Style
-from typing import List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from ..menu import confirmation_menu, list_choice_menu, read_password, Choice, UserExit
 
@@ -62,22 +62,58 @@ class Backend(ABC):
     # def delete_password(self, password_key: str) -> None:
     #     """ Deletes a password from the backend """
 
+    def get_root_menu_actions(self) -> List[Union[str, Dict[str, Any]]]:
+        """
+        Returns a list of actions to present in a menu for the root menu of the backend
+
+        Override this method if your backend supports more actions that the default ones.
+        If you do, remember to override `get_method_for_root_menu_action`
+        """
+        return [
+            {'name': member.value, 'value': member} for member in RootAction
+        ]
+
+    def get_method_for_root_menu_action(self, menu_action: Any) -> Callable:
+        """
+        Returns the method to call for the given menu action
+
+        This method goes in pair with `get_root_menu_actions`
+        """
+        return getattr(self, ROOT_ACTION_MAPPING[menu_action])
+
+    def get_password_menu_actions(self) -> List[Union[str, Dict[str, Any]]]:
+        """
+        Returns a list of actions to present in a menu for the password menu of the backend
+
+        Override this method if your backend supports more actions that the default ones.
+        If you do, remember to override `get_method_for_password_menu_action`
+        """
+        return [
+            {'name': member.value, 'value': member} for member in PasswordAction
+        ]
+
+    def get_method_for_password_menu_action(self, menu_action: Any) -> Callable:
+        """
+        Returns the method to call for the given menu action
+
+        This method goes in pair with `get_password_menu_actions`
+        """
+        return getattr(self, PASSWORD_ACTION_MAPPING[menu_action])
+
     def main_menu(self) -> None:
         """
         Displays the backend main menu
 
         By default, proposes all the `RootAction` and call their handler
         """
-        main_menu_choices: List[Choice[RootAction]] = [
-            {'name': member.value, 'value': member} for member in RootAction
-        ]
+        main_menu_choices = self.get_root_menu_actions()
         try:
             action: Optional[RootAction] = list_choice_menu(
-                main_menu_choices, 'What do you want to do?', 0
+                main_menu_choices, 'What do you want to do?', 0     # type:ignore  # noqa  # too complex for mypy
             )
             if action is None:
                 return
-            action_method = getattr(self, ROOT_ACTION_MAPPING[action])
+            action_method = self.get_method_for_root_menu_action(action)
             action_method()
         except UserExit:
             print("\nGoodbye\n")
@@ -102,19 +138,17 @@ class Backend(ABC):
 
         By default, proposes all the `PasswordAction` and call their handler
         """
-        password_menu_choices: List[Choice[PasswordAction]] = [
-            {'name': member.value, 'value': member} for member in PasswordAction
-        ]
+        password_menu_choices = self.get_password_menu_actions()
 
         password_action: Optional[PasswordAction] = list_choice_menu(
-            password_menu_choices,
+            password_menu_choices,     # type:ignore  # too complex for mypy
             f'What do you want to do with this password ({password_key})?',
             back=self.main_menu
         )
         if password_action is None:
             return
 
-        action_method = getattr(self, PASSWORD_ACTION_MAPPING[password_action])
+        action_method = self.get_method_for_password_menu_action(password_action)
         action_method(password_key)
 
     def _handle_retrieve_password(self, password_key: str) -> None:
