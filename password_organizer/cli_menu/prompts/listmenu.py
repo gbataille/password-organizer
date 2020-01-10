@@ -114,11 +114,11 @@ def question(message, **kwargs):
     )
 
     @kb.add(Keys.ControlQ, eager=True)
-    def exit(event):
+    def exit_menu(event):
         event.app.exit(exception=KeyboardInterrupt())
 
     if not kb.get_bindings_for_keys((Keys.ControlC,)):
-        kb.add(Keys.ControlC, eager=True)(exit)
+        kb.add(Keys.ControlC, eager=True)(exit_menu)
 
     @kb.add(Keys.Down, eager=True)
     def move_cursor_down(_event):        # pylint:disable=unused-variable
