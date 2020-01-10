@@ -4,8 +4,7 @@ from prompt_toolkit import print_formatted_text, HTML
 from prompt_toolkit.styles import Style
 from typing import List, Optional
 
-from ..cli_menu import prompt
-from ..menu import confirmation_menu, list_choice_menu, Choice, UserExit
+from ..menu import confirmation_menu, list_choice_menu, read_password, Choice, UserExit
 
 
 class RootAction(Enum):
@@ -137,18 +136,9 @@ class Backend(ABC):
         self.main_menu()
 
     def _handle_update_password(self, password_key: str) -> None:
-        questions = [
-            {
-                'type': 'password',
-                'name': 'new_password_value',
-                'message': (
-                    'Please enter the new value for the password.\n'
-                    '  This will overwrite the old password value (which will be lost):'
-                ),
-                'multiline': True,
-            }
-        ]
-        answers = prompt(questions)
-        new_password_value = answers['new_password_value']
+        new_password_value = read_password((
+            'Please enter the new value for the password.\n'
+            '  This will overwrite the old password value (which will be lost):'
+        ))
         self.store_password(password_key, new_password_value)
         self.password_menu(password_key)

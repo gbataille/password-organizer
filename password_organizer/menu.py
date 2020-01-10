@@ -18,10 +18,20 @@ BACK = 'Back...'
 QUIT = 'Exit'
 
 
-def confirmation_menu(
-    message: str,
-) -> bool:
+def confirmation_menu(message: str) -> bool:
     return confirm(message=message)
+
+
+def read_password(message: str) -> str:
+    questions = [
+        {
+            'type': 'password',
+            'name': 'password_value',
+            'message': message,
+        }
+    ]
+    answers = prompt(questions)
+    return answers['password_value']
 
 
 def list_choice_menu(
