@@ -1,6 +1,7 @@
 from copy import deepcopy
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
+from prompt_toolkit.shortcuts import confirm
 from typing import Callable, Dict, List, Optional, TypeVar, Union
 
 from .cli_menu import prompt, Separator
@@ -15,6 +16,12 @@ Choice = Union[T, Dict[str, T], Separator, str]
 
 BACK = 'Back...'
 QUIT = 'Exit'
+
+
+def confirmation_menu(
+    message: str,
+) -> bool:
+    return confirm(message=message)
 
 
 def list_choice_menu(

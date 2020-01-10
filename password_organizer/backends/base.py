@@ -5,7 +5,7 @@ from prompt_toolkit.styles import Style
 from typing import List, Optional
 
 from ..cli_menu import prompt
-from ..menu import list_choice_menu, Choice, UserExit
+from ..menu import confirmation_menu, list_choice_menu, Choice, UserExit
 
 
 class RootAction(Enum):
@@ -119,18 +119,11 @@ class Backend(ABC):
         action_method(password_key)
 
     def _handle_retrieve_password(self, password_key: str) -> None:
-        questions = [
-            {
-                'type': 'confirm',
-                'name': 'confirmation',
-                'message': (
-                    f'Are you sure you want to retrieve {password_key}? '
-                    'Its value will be displayed in clear on the screen'
-                ),
-            }
-        ]
-        answers = prompt(questions, default=False)
-        confirmation = answers['confirmation']
+        confirmation = confirmation_menu((
+            f'Are you sure you want to retrieve {password_key}? '
+            'Its value will be displayed in clear on the screen'
+        ))
+
         if not confirmation:
             return self.password_menu(password_key)
 
