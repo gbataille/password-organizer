@@ -22,13 +22,15 @@ class InquirerControl(FormattedTextControl):
     def _init_choices(self, choices, default=None):
         # helper to convert from question format to internal format
         self.choices = []  # list (name, value, disabled)
-        searching_first_choice = True
+        self.selected_option_index = -1
         for i, c in enumerate(choices):
             if isinstance(c, Separator):
                 self.choices.append((c, None, None))
             else:
                 if isinstance(c, str):
                     self.choices.append((c, c, None))
+                    if self.selected_option_index == -1:
+                        self.selected_option_index = i
                 else:
                     name = c.get('name')
                     value = c.get('value', name)
@@ -36,10 +38,9 @@ class InquirerControl(FormattedTextControl):
                     self.choices.append((name, value, disabled))
                     if value == default:
                         self.selected_option_index = i
-                        searching_first_choice = False
-                if searching_first_choice:
-                    self.selected_option_index = i  # found the first choice
-                    searching_first_choice = False
+
+                    if self.selected_option_index == -1 and not disabled:
+                        self.selected_option_index = i  # found the first choice
 
     @property
     def choice_count(self):
@@ -58,7 +59,7 @@ class InquirerControl(FormattedTextControl):
                 tokens.append(('', '   '))
 
             if choice[2]:  # disabled
-                tokens.append(('class:selected' if selected else '',
+                tokens.append(('class:selected' if selected else 'class:disabled',
                                '- %s (%s)' % (choice[0], choice[2])))
             else:
                 try:

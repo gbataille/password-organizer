@@ -10,4 +10,5 @@ default_style = Style.from_dict({
     'instruction': '',
     'answer': '#FF9D00 bold',
     'question': 'bold',
+    'disabled': '#555555',
 })

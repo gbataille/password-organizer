@@ -12,7 +12,16 @@ class UserExit(Exception):
 
 
 T = TypeVar('T')
-Choice = Union[T, Dict[str, T], Separator, str]
+# Awful type!!!
+# a choice can be
+# - a T (the type chosen by the user)
+# - a dict with
+#     - a 'name' key linked to a str, for display
+#     - a 'value' key linked to a T, for return value
+#     - an optional 'disabled' key linked to a str, to display in the choice between brackets
+# - a Separator
+# - a string (because we force the QUIT and the BACK option that are special
+Choice = Union[T, Dict[str, Union[T, str]], Separator, str]
 
 BACK = 'Back...'
 QUIT = 'Exit'
