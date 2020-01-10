@@ -8,6 +8,7 @@ from ..cli_menu import prompt, Separator
 
 
 BACK = 'Back...'
+QUIT = 'Exit (Ctrl+c)'
 
 
 class RootAction(Enum):
@@ -71,14 +72,16 @@ class Backend(ABC):
 
         By default, proposes all the `RootAction` and call their handler
         """
+        main_menu_choices: List[Any] = [
+            {'name': member.value, 'value': member} for member in RootAction
+        ]
+        main_menu_choices.extend([Separator(), QUIT])
         questions = [
             {
                 'type': 'listmenu',
                 'name': 'action',
                 'message': 'What do you want to do?',
-                'choices': [
-                    {'name': member.value, 'value': member} for member in RootAction
-                ],
+                'choices': main_menu_choices,
                 'default': 0,
             }
         ]
@@ -86,16 +89,20 @@ class Backend(ABC):
         try:
             answers = prompt(questions)
             action = answers['action']
-            action_method = getattr(self, ROOT_ACTION_MAPPING[action])
-            action_method()
+            if action == QUIT:
+                raise KeyboardInterrupt()
+            else:
+                action_method = getattr(self, ROOT_ACTION_MAPPING[action])
+                action_method()
         except KeyboardInterrupt:
-            print("\nInterrupted\nGoodbye\n")
+            print("\nGoodbye\n")
 
     def _handle_list_password_action(self) -> None:
         password_keys = self.list_password_keys()
 
         password_action_choices: List[Any] = password_keys
         password_action_choices.extend([Separator(), BACK])
+        password_action_choices.extend([Separator(), QUIT])
         questions = [
             {
                 'type': 'listmenu',
@@ -109,6 +116,8 @@ class Backend(ABC):
         if password_key == BACK:
             print('\n')
             self.main_menu()
+        elif password_key == QUIT:
+            raise KeyboardInterrupt()
         else:
             self.password_menu(password_key)
 
@@ -121,7 +130,8 @@ class Backend(ABC):
         password_menu_choices: List[Any] = [
             {'name': member.value, 'value': member} for member in PasswordAction
         ]
-        password_menu_choices.extend([Separator(), {'name': BACK, 'value': BACK}])
+        password_menu_choices.extend([Separator(), BACK])
+        password_menu_choices.extend([Separator(), QUIT])
 
         questions = [
             {
@@ -136,6 +146,8 @@ class Backend(ABC):
         if password_action == BACK:
             print('\n')
             self.main_menu()
+        elif password_action == QUIT:
+            raise KeyboardInterrupt()
         else:
             action_method = getattr(self, PASSWORD_ACTION_MAPPING[password_action])
             action_method(password_key)
@@ -154,7 +166,7 @@ class Backend(ABC):
         answers = prompt(questions)
         confirmation = answers['confirmation']
         if not confirmation:
-            self.password_menu(password_key)
+            return self.password_menu(password_key)
 
         password_value = self.retrieve_password(password_key)
         print_formatted_text(
