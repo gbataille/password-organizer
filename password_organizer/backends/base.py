@@ -54,10 +54,9 @@ class Backend(ABC):
     def retrieve_password(self, key: str) -> str:
         """ Gets the password value for a given password key """
 
-    # TODO - gbataille: separate create and update
     @abstractmethod
-    def store_password(self, key: str, password_value: str) -> None:
-        """ Stores the password under the given key in the backend """
+    def update_password(self, key: str, password_value: str) -> None:
+        """ Updates the password under the given key in the backend """
 
     @abstractmethod
     def delete_password(self, password_key: str) -> None:
@@ -175,7 +174,7 @@ class Backend(ABC):
             'Please enter the new value for the password.\n'
             '  This will overwrite the old password value (which will be lost):'
         ))
-        self.store_password(password_key, new_password_value)
+        self.update_password(password_key, new_password_value)
         self.password_menu(password_key)
 
     def _handle_delete_password(self, password_key: str) -> None:

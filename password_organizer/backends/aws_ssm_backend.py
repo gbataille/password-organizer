@@ -38,7 +38,7 @@ using default KMS encryption keys
         resp = self.ssm_cli.get_parameter(Name=key, WithDecryption=True)
         return resp.get('Parameter', {}).get('Value')
 
-    def store_password(self, key: str, password_value: str) -> None:
+    def update_password(self, key: str, password_value: str) -> None:
         self.ssm_cli.put_parameter(
             Name=key,
             Value=password_value,
