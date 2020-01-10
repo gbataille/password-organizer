@@ -4,15 +4,17 @@ from prompt_toolkit import print_formatted_text, HTML
 from prompt_toolkit.styles import Style
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from ..menu import confirmation_menu, list_choice_menu, read_password, Choice, UserExit
+from ..menu import confirmation_menu, list_choice_menu, read_input, read_password, Choice, UserExit
 
 
 class RootAction(Enum):
     LIST_PASSWORDS = 'List passwords'
+    CREATE_PASSWORD = 'Create a new password'
 
 
 ROOT_ACTION_MAPPING = {
-    RootAction.LIST_PASSWORDS: "_handle_list_password_action"
+    RootAction.LIST_PASSWORDS: "_handle_list_password_action",
+    RootAction.CREATE_PASSWORD: "_handle_create_password_action",
 }
 """ Those methods take no parameter """
 
@@ -53,6 +55,10 @@ class Backend(ABC):
     @abstractmethod
     def retrieve_password(self, key: str) -> str:
         """ Gets the password value for a given password key """
+
+    @abstractmethod
+    def create_password(self, password_key: str, password_value: str) -> None:
+        """ Create a new password under the given key in the backend """
 
     @abstractmethod
     def update_password(self, key: str, password_value: str) -> None:
@@ -130,6 +136,16 @@ class Backend(ABC):
         if password_key is None:
             return
 
+        self.password_menu(password_key)
+
+    def _handle_create_password_action(self) -> None:
+        password_key = read_input((
+            'Please enter the name (key) under which to store the password:'
+        ))
+        password_value = read_password((
+            'Please enter the value for the password:'
+        ))
+        self.create_password(password_key, password_value)
         self.password_menu(password_key)
 
     def password_menu(self, password_key: str) -> None:

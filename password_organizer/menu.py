@@ -31,6 +31,18 @@ def confirmation_menu(message: str) -> bool:
     return confirm(message=message)
 
 
+def read_input(message: str) -> str:
+    questions = [
+        {
+            'type': 'std_input',
+            'name': 'value',
+            'message': message,
+        }
+    ]
+    answers = prompt(questions)
+    return answers['value']
+
+
 def read_password(message: str) -> str:
     questions = [
         {
