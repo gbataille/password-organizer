@@ -11,6 +11,9 @@ def title():
 
 
 def main():
+    # TODO - gbataille: choose backend
+    # TODO - gbataille: for AWS backend, chose region
+    # TODO - gbataille: for AWS backend, display on which account it is connected
     title()
 
     try:
