@@ -163,7 +163,7 @@ class Backend(ABC):
                 ),
             }
         ]
-        answers = prompt(questions)
+        answers = prompt(questions, default=False)
         confirmation = answers['confirmation']
         if not confirmation:
             return self.password_menu(password_key)
