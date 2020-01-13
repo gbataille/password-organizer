@@ -39,6 +39,16 @@ assert len(PASSWORD_ACTION_MAPPING.keys()) == len(PasswordAction)
 
 class Backend(ABC):
 
+    def __init__(self, *args, back: Optional[Callable] = None, **kwargs):  # pylint:disable=unused-argument  # noqa
+        """
+        Parameters
+        ==========
+        back: Optional[Callable]
+            The method to call when the user choses to go back from the backend menu
+            Passing `None` will mean that the backend menu will not display a *BACK* option
+        """
+        self._back = back
+
     @abstractmethod
     def title(self) -> None:
         """ Outputs to STDOUT a title / description / documentation for the backend chosen """
@@ -106,7 +116,7 @@ class Backend(ABC):
         """
         return getattr(self, PASSWORD_ACTION_MAPPING[menu_action])
 
-    def main_menu(self, back: Callable = None) -> None:
+    def main_menu(self) -> None:
         """
         Displays the backend main menu
 
@@ -124,7 +134,7 @@ class Backend(ABC):
                 main_menu_choices,              # type:ignore  # too complex for mypy
                 'What do you want to do?',
                 0,
-                back=back,
+                back=self._back,
             )
             if action is None:
                 return

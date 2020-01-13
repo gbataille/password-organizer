@@ -45,10 +45,10 @@ def backend_menu() -> int:
         return ExitCode.CANNOT_FIND_BACKEND.value
 
     try:
-        backend = clazz()
+        backend = clazz(back=backend_menu)
     except InterruptProgramException as e:
         print(f"Error: \n\t{e.display_message}")
         return e.exit_code.value
 
     backend.title()
-    return backend.main_menu(back=backend_menu)
+    return backend.main_menu()
