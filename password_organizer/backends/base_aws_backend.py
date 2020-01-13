@@ -21,6 +21,7 @@ class BaseAWSBackend(Backend):      # pylint:disable=abstract-method
     """
 
     def __init__(self, *args, **kwargs):
+        # TODO - gbataille: parameterize the region
         super().__init__(*args, **kwargs)
         self.region = 'us-east-1'
 
