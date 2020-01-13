@@ -106,16 +106,25 @@ class Backend(ABC):
         """
         return getattr(self, PASSWORD_ACTION_MAPPING[menu_action])
 
-    def main_menu(self) -> None:
+    def main_menu(self, back: Callable = None) -> None:
         """
         Displays the backend main menu
 
         By default, proposes all the `RootAction` and call their handler
+
+        Parameters
+        ==========
+        back: Callable
+            The function to call when the user choses to go back
+            If set to `None` (default) the menu will not display a *BACK* option
         """
         main_menu_choices = self.get_root_menu_actions()
         try:
             action: Optional[RootAction] = list_choice_menu(
-                main_menu_choices, 'What do you want to do?', 0     # type:ignore  # noqa  # too complex for mypy
+                main_menu_choices,              # type:ignore  # too complex for mypy
+                'What do you want to do?',
+                0,
+                back=back,
             )
             if action is None:
                 return

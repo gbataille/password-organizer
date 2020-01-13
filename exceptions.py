@@ -3,7 +3,8 @@ from enum import Enum
 
 
 class ExitCode(Enum):
-    MISSING_AUTHENTICATION = 100
+    CANNOT_FIND_BACKEND = 100
+    MISSING_AUTHENTICATION = 101
 
 
 class InterruptProgramException(Exception, ABC):
