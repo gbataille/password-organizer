@@ -222,6 +222,9 @@ class ChoicesControl(UIControl):
 
 def question(message, choices: List[Choice], default=None, qmark='?', key_bindings=None, **kwargs):
     """
+    Builds a `prompt-toolkit` Application that display a list of choices (ChoiceControl) along with
+    search features and key bindings
+
     Paramaters
     ==========
     kwargs: Dict[Any, Any]
@@ -247,28 +250,6 @@ def question(message, choices: List[Choice], default=None, qmark='?', key_bindin
     @Condition
     def has_search_string():
         return choices_control.get_search_string_tokens is not None
-
-    # assemble layout
-    layout = Layout(
-        HSplit([
-            Window(
-                height=D.exact(1),
-                content=FormattedTextControl(get_prompt_tokens),
-                always_hide_cursor=True,
-            ),
-            ConditionalContainer(
-                Window(choices_control),
-                filter=~IsDone()        # pylint:disable=invalid-unary-operand-type
-            ),
-            ConditionalContainer(
-                Window(
-                    height=D.exact(2),
-                    content=FormattedTextControl(choices_control.get_search_string_tokens)
-                ),
-                filter=has_search_string & ~IsDone()    # pylint:disable=invalid-unary-operand-type
-            ),
-        ])
-    )
 
     @key_bindings.add(Keys.ControlQ, eager=True)
     def exit_menu(event):
@@ -300,6 +281,30 @@ def question(message, choices: List[Choice], default=None, qmark='?', key_bindin
     @key_bindings.add(Keys.Backspace, eager=True)
     def delete_from_search_filter(_event):        # pylint:disable=unused-variable
         choices_control.remove_last_char_from_search_string()
+
+    layout = Layout(
+        HSplit([
+            # Question
+            Window(
+                height=D.exact(1),
+                content=FormattedTextControl(get_prompt_tokens),
+                always_hide_cursor=True,
+            ),
+            # Choices
+            ConditionalContainer(
+                Window(choices_control),
+                filter=~IsDone()        # pylint:disable=invalid-unary-operand-type
+            ),
+            # Searched string
+            ConditionalContainer(
+                Window(
+                    height=D.exact(2),
+                    content=FormattedTextControl(choices_control.get_search_string_tokens)
+                ),
+                filter=has_search_string & ~IsDone()    # pylint:disable=invalid-unary-operand-type
+            ),
+        ])
+    )
 
     return Application(
         layout=layout,
