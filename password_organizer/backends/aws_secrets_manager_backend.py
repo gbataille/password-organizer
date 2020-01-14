@@ -13,6 +13,9 @@ class AWSSecretsManagerBackend(BaseAWSBackend):
         # TODO - gbataille: support secrets tagging
         # TODO - gbataille: support key/value as secret
         super().__init__(*args, **kwargs)
+        self.secrets_cli = None
+
+    def _setup_aws_clients(self) -> None:
         self.secrets_cli = boto3.client('secretsmanager', region_name=self.region)
 
     def backend_description(self) -> str:

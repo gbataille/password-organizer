@@ -50,6 +50,10 @@ class Backend(ABC):
         self._back = back
 
     @abstractmethod
+    def initialize(self) -> None:
+        """ Perform the backend setup (region, endpoint, credentials, ...) """
+
+    @abstractmethod
     def title(self) -> None:
         """ Outputs to STDOUT a title / description / documentation for the backend chosen """
 

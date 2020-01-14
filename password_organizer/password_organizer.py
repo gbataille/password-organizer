@@ -18,7 +18,6 @@ def app_title():
 
 
 def main() -> int:
-    # TODO - gbataille: for AWS backend, chose region
     app_title()
     return backend_menu()
 
@@ -48,5 +47,6 @@ def backend_menu() -> int:
         print(f"Error: \n\t{e.display_message}")
         return e.exit_code.value
 
+    backend.initialize()
     backend.title()
     return backend.main_menu()

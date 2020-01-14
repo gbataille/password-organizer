@@ -1,8 +1,10 @@
 from abc import abstractmethod
 import boto3
 
-from exceptions import MissingAuthentication
+from aws_constants import AWS_REGIONS
+from exceptions import InitializationFailure, MissingAuthentication
 from . import Backend
+from ..menu import list_choice_menu
 
 
 class BaseAWSBackend(Backend):      # pylint:disable=abstract-method
@@ -21,7 +23,6 @@ class BaseAWSBackend(Backend):      # pylint:disable=abstract-method
     """
 
     def __init__(self, *args, **kwargs):
-        # TODO - gbataille: parameterize the region
         super().__init__(*args, **kwargs)
         self.region = 'us-east-1'
 
@@ -33,14 +34,33 @@ class BaseAWSBackend(Backend):      # pylint:disable=abstract-method
             # TODO - gbataille: test this behavior for changes
             raise MissingAuthentication()
 
+    def initialize(self) -> None:
+        self.region = list_choice_menu(
+            AWS_REGIONS,        # type:ignore  # Type too complicated for mypy
+            'Which region do you want to work with?',
+            0,
+            back=self._back,
+        )
+        if self.region is None:
+            raise InitializationFailure()
+
+        self._setup_aws_clients()
+
+    @abstractmethod
+    def _setup_aws_clients(self) -> None:
+        """
+        Used to initialize the AWS client connections.
+        Called anytime they need to be refreshed, like when the region changes
+        """
+
     @abstractmethod
     def backend_description(self) -> str:
         """ A description of the AWS based backend, to be displayed at backend initialization """
 
     def title(self):
-        _title = "Working on AWS:\n"
+        _title = f"Working on AWS, in region {self.region}:\n"
 
-        _title += f'- Account ID: '
+        _title += '- Account ID: '
         try:
             account_id = self.sts_cli.get_caller_identity()['Account']
             # Spaces for manual alignment with account alias
@@ -48,7 +68,7 @@ class BaseAWSBackend(Backend):      # pylint:disable=abstract-method
         except Exception as e:
             _title += f' 💥 Error 💥 - {str(e)[:50]}...\n'
 
-        _title += f'- Account alias: '
+        _title += '- Account alias: '
         try:
             account_aliases = self.iam_cli.list_account_aliases()['AccountAliases']
             if account_aliases:

@@ -5,6 +5,7 @@ from enum import Enum
 class ExitCode(Enum):
     CANNOT_FIND_BACKEND = 100
     MISSING_AUTHENTICATION = 101
+    INIT_FAILED = 102
 
 
 class InterruptProgramException(Exception, ABC):
@@ -31,3 +32,15 @@ class MissingAuthentication(InterruptProgramException):
     @property
     def display_message(self) -> str:
         return "Could not find any credentials"
+
+
+class InitializationFailure(InterruptProgramException):
+    """ Failure to perform the backend init procedure """
+
+    @property
+    def exit_code(self) -> ExitCode:
+        return ExitCode.INIT_FAILED
+
+    @property
+    def display_message(self) -> str:
+        return "Could not complete the backend initialization procedure"

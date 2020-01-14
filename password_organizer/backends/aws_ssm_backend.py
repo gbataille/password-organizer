@@ -9,6 +9,9 @@ class AWSSSMBackend(BaseAWSBackend):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.ssm_cli = None
+
+    def _setup_aws_clients(self) -> None:
         self.ssm_cli = boto3.client('ssm', region_name=self.region)
 
     def backend_description(self) -> str:
