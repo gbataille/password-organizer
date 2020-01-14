@@ -3,26 +3,47 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.filters import Condition, IsDone
 from prompt_toolkit.layout import Layout
-from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.layout.controls import (
+    FormattedTextControl, GetLinePrefixCallable, UIContent, UIControl
+)
 from prompt_toolkit.layout.containers import ConditionalContainer, HSplit, Window
 from prompt_toolkit.layout.dimension import LayoutDimension as D
 import string
+from typing import Optional
 
 from ..separator import Separator
 from .common import default_style
 
 
-class InquirerControl(FormattedTextControl):
-    # Uses the internal logic of a FormattedTextControl that can produce some UIContent (non
-    # trivial) but manages the Control's content on the fly
+class ChoicesControl(UIControl):
+    """
+    Menu to display some textual choices.
+    Provide a search feature by just typing the start of the entry desired
+    """
     def __init__(self, choices, **kwargs):
         self.selected_option_index = 0
         self.answered = False
         self._init_choices(choices, kwargs.pop('default'))
         self.search_string = None
-        super(InquirerControl, self).__init__(
-            text=self._get_choice_tokens,
-            **kwargs
+        super().__init__(**kwargs)
+
+    def preferred_width(self, max_available_width: int) -> int:
+        max_elem_width = max(list(map(len, self.choices)))
+        return min(max_elem_width, max_available_width)
+
+    def preferred_height(
+        self,
+        width: int,
+        max_available_height: int,
+        wrap_lines: bool,
+        get_line_prefix: Optional[GetLinePrefixCallable],
+    ) -> Optional[int]:
+        return self.choice_count
+
+    def create_content(self, width: int, height: int) -> UIContent:
+        return UIContent(
+            get_line=lambda i: self._get_line_tokens(i, self.choices[i]),
+            line_count=self.choice_count,
         )
 
     def _init_choices(self, choices, default=None):
@@ -52,45 +73,49 @@ class InquirerControl(FormattedTextControl):
     def choice_count(self):
         return len(self.choices)
 
+    def _get_line_tokens(self, line_number, choice):
+        tokens = []
+
+        if self.search_string:
+            if (
+                isinstance(choice[0], Separator)
+                or (
+                    isinstance(choice[0], str)
+                    and not choice[0].startswith(self.search_string)
+                )
+            ):
+                if line_number == self.selected_option_index:
+                    # the current selection is masked, moving to the next visible entry
+                    # FIXME: when no choices left to display, selection is out of bound
+                    self.selected_option_index += 1
+                return
+
+        selected = (line_number == self.selected_option_index)
+
+        if selected:
+            tokens.append(('class:set-cursor-position', ' \u276f '))
+        else:
+            # For alignment
+            tokens.append(('', '   '))
+
+        if choice[2]:  # disabled
+            tokens.append(('class:selected' if selected else 'class:disabled',
+                           '- %s (%s)' % (choice[0], choice[2])))
+        else:
+            try:
+                tokens.append(('class:selected' if selected else '', str(choice[0])))
+            except Exception:
+                tokens.append(('class:selected' if selected else '', choice[0]))
+
+        return tokens
+
     def _get_choice_tokens(self):
         tokens = []
 
-        def append(index, choice):
-            if self.search_string:
-                if (
-                    isinstance(choice[0], Separator)
-                    or (
-                        isinstance(choice[0], str)
-                        and not choice[0].startswith(self.search_string)
-                    )
-                ):
-                    if index == self.selected_option_index:
-                        # the current selection is masked, moving to the next visible entry
-                        # FIXME: when no choices left to display, selection is out of bound
-                        self.selected_option_index += 1
-                    return
-
-            selected = (index == self.selected_option_index)
-
-            if selected:
-                tokens.append(('class:set-cursor-position', ' \u276f '))
-            else:
-                # For alignment
-                tokens.append(('', '   '))
-
-            if choice[2]:  # disabled
-                tokens.append(('class:selected' if selected else 'class:disabled',
-                               '- %s (%s)' % (choice[0], choice[2])))
-            else:
-                try:
-                    tokens.append(('class:selected' if selected else '', str(choice[0])))
-                except Exception:
-                    tokens.append(('class:selected' if selected else '', choice[0]))
-            tokens.append(('', '\n'))
-
         # prepare the select choices
         for i, choice in enumerate(self.choices):
-            append(i, choice)
+            tokens.extend(self._get_line_tokens(i, choice))
+            tokens.append(('', '\n'))
         if tokens:
             tokens.pop()  # Remove last newline if any
         return tokens
@@ -119,7 +144,7 @@ def question(message, **kwargs):
     qmark = kwargs.pop('qmark', '?')
     kb = kwargs.pop('keybindings', KeyBindings())
 
-    ic = InquirerControl(
+    ic = ChoicesControl(
         choices,
         default=default
     )
