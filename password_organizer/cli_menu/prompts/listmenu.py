@@ -60,7 +60,7 @@ class ChoicesControl(UIControl):
         self._selected_index: int = -1
 
         self.answered = False
-        self.search_string: Optional[str] = None
+        self._search_string: Optional[str] = None
         self._choices = choices
         self._init_choices(default=kwargs.pop('default'))
         self._cached_choices: Optional[List[Choice]] = None
@@ -83,8 +83,8 @@ class ChoicesControl(UIControl):
         self._cached_choices = []
 
         for choice in self._choices:
-            if self.search_string:
-                if choice.display_text.startswith(self.search_string):
+            if self._search_string:
+                if choice.display_text.startswith(self._search_string):
                     self._cached_choices.append(choice)
             else:
                 self._cached_choices.append(choice)
@@ -181,30 +181,33 @@ class ChoicesControl(UIControl):
         return tokens
 
     def get_search_string_tokens(self):
-        if self.search_string is None:
+        if self._search_string is None:
             return None
 
         return [
             ('', '\n'),
             ('class:question-mark', '/ '),
-            ('class:search', self.search_string),
+            ('class:search', self._search_string),
             ('class:question-mark', '...'),
         ]
 
     def append_to_search_string(self, char: str) -> None:
         """ Appends a character to the search string """
-        if self.search_string is None:
-            self.search_string = ''
-        self.search_string += char
+        if self._search_string is None:
+            self._search_string = ''
+        self._search_string += char
         self._reset_cached_choices()
 
     def remove_last_char_from_search_string(self) -> None:
         """ Remove the last character from the search string (~backspace) """
-        if self.search_string and len(self.search_string) > 1:
-            self.search_string = self.search_string[:-1]
+        if self._search_string and len(self._search_string) > 1:
+            self._search_string = self._search_string[:-1]
         else:
-            self.search_string = None
+            self._search_string = None
         self._reset_cached_choices()
+
+    def reset_search_string(self) -> None:
+        self._search_string = None
 
 
 def question(message, choices: List[Choice], default=None, qmark='?', key_bindings=None, **kwargs):
@@ -251,7 +254,7 @@ def question(message, choices: List[Choice], default=None, qmark='?', key_bindin
                     height=D.exact(2),
                     content=FormattedTextControl(choices_control.get_search_string_tokens)
                 ),
-                filter=has_search_string
+                filter=has_search_string & ~IsDone()    # pylint:disable=invalid-unary-operand-type
             ),
         ])
     )
@@ -274,7 +277,7 @@ def question(message, choices: List[Choice], default=None, qmark='?', key_bindin
     @key_bindings.add(Keys.Enter, eager=True)
     def set_answer(event):        # pylint:disable=unused-variable
         choices_control.answered = True
-        choices_control.search_string = None
+        choices_control.reset_search_string()
         event.app.exit(result=choices_control.get_selection().value)
 
     def search_filter(event):
