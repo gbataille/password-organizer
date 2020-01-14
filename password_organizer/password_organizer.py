@@ -18,9 +18,7 @@ def app_title():
 
 
 def main() -> int:
-    # TODO - gbataille: choose backend
     # TODO - gbataille: for AWS backend, chose region
-    # TODO - gbataille: for AWS backend, display on which account it is connected
     app_title()
     return backend_menu()
 
