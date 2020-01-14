@@ -4,7 +4,7 @@ from prompt_toolkit import print_formatted_text, HTML
 from prompt_toolkit.styles import Style
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from ..menu import confirmation_menu, list_choice_menu, read_input, read_password, Choice, UserExit
+from ..menu import confirmation_menu, list_choice_menu, read_input, read_password, Choice
 
 
 class RootAction(Enum):
@@ -133,19 +133,16 @@ class Backend(ABC):
             If set to `None` (default) the menu will not display a *BACK* option
         """
         main_menu_choices = self.get_root_menu_actions()
-        try:
-            action: Optional[RootAction] = list_choice_menu(
-                main_menu_choices,              # type:ignore  # too complex for mypy
-                'What do you want to do?',
-                0,
-                back=self._back,
-            )
-            if action is None:
-                return
-            action_method = self.get_method_for_root_menu_action(action)
-            action_method()
-        except UserExit:
-            print("\nGoodbye\n")
+        action: Optional[RootAction] = list_choice_menu(
+            main_menu_choices,              # type:ignore  # too complex for mypy
+            'What do you want to do?',
+            0,
+            back=self._back,
+        )
+        if action is None:
+            return
+        action_method = self.get_method_for_root_menu_action(action)
+        action_method()
 
     def _handle_list_password_action(self) -> None:
         password_keys = self.list_password_keys()

@@ -2,7 +2,7 @@ import importlib
 from pyfiglet import Figlet
 
 from exceptions import InterruptProgramException, ExitCode
-from .menu import list_choice_menu
+from .menu import list_choice_menu, UserExit
 
 
 BACKENDS = {
@@ -23,13 +23,17 @@ def main() -> int:
 
 
 def backend_menu() -> int:
-    backend_key = list_choice_menu(
-        list(BACKENDS.keys()),
-        "Which backend do you want to use?"
-    )
-    if backend_key is None:
-        # There is no "back" option in the menu above, so this code path should not be possible
-        print("No choice, leaving...")
+    try:
+        backend_key = list_choice_menu(
+            list(BACKENDS.keys()),
+            "Which backend do you want to use?"
+        )
+        if backend_key is None:
+            # There is no "back" option in the menu above, so this code path should not be possible
+            print("No choice, leaving...")
+            return 0
+    except UserExit:
+        print("\nGoodbye\n")
         return 0
 
     backend_module, backend_class = BACKENDS[backend_key]
@@ -47,6 +51,10 @@ def backend_menu() -> int:
         print(f"Error: \n\t{e.display_message}")
         return e.exit_code.value
 
-    backend.initialize()
-    backend.title()
-    return backend.main_menu()
+    try:
+        backend.initialize()
+        backend.title()
+        return backend.main_menu()
+    except UserExit:
+        print("\nGoodbye\n")
+        return 0

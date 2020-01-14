@@ -1,11 +1,12 @@
 from prompt_toolkit.application import Application
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
-from prompt_toolkit.filters import IsDone
+from prompt_toolkit.filters import Condition, IsDone
 from prompt_toolkit.layout import Layout
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.containers import ConditionalContainer, HSplit, Window
 from prompt_toolkit.layout.dimension import LayoutDimension as D
+import string
 
 from ..separator import Separator
 from .common import default_style
@@ -17,7 +18,11 @@ class InquirerControl(FormattedTextControl):
         self.answered = False
         self.choices = choices
         self._init_choices(choices, kwargs.pop('default'))
-        super(InquirerControl, self).__init__(self._get_choice_tokens, **kwargs)
+        self.search_string = None
+        super(InquirerControl, self).__init__(
+            text=self._get_choice_tokens,
+            **kwargs
+        )
 
     def _init_choices(self, choices, default=None):
         # helper to convert from question format to internal format
@@ -50,6 +55,20 @@ class InquirerControl(FormattedTextControl):
         tokens = []
 
         def append(index, choice):
+            if self.search_string:
+                if (
+                    isinstance(choice[0], Separator)
+                    or (
+                        isinstance(choice[0], str)
+                        and not choice[0].startswith(self.search_string)
+                    )
+                ):
+                    if index == self.selected_option_index:
+                        # the current selection is masked, moving to the next visible entry
+                        # FIXME: when no choices left to display, selection is out of bound
+                        self.selected_option_index += 1
+                    return
+
             selected = (index == self.selected_option_index)
 
             if selected:
@@ -71,11 +90,23 @@ class InquirerControl(FormattedTextControl):
         # prepare the select choices
         for i, choice in enumerate(self.choices):
             append(i, choice)
-        tokens.pop()  # Remove last newline.
+        if tokens:
+            tokens.pop()  # Remove last newline if any
         return tokens
 
     def get_selection(self):
         return self.choices[self.selected_option_index]
+
+    def get_search_string_tokens(self):
+        if self.search_string is None:
+            return None
+
+        return [
+            ('', '\n'),
+            ('class:question-mark', '/ '),
+            ('class:search', self.search_string),
+            ('class:question-mark', '...'),
+        ]
 
 
 def question(message, **kwargs):
@@ -87,7 +118,10 @@ def question(message, **kwargs):
     qmark = kwargs.pop('qmark', '?')
     kb = kwargs.pop('keybindings', KeyBindings())
 
-    ic = InquirerControl(choices, default=default)
+    ic = InquirerControl(
+        choices,
+        default=default
+    )
 
     def get_prompt_tokens():
         tokens = []
@@ -100,6 +134,10 @@ def question(message, **kwargs):
             tokens.append(('class:instruction', ' (Use arrow keys)'))
         return tokens
 
+    @Condition
+    def has_search_string():
+        return ic.get_search_string_tokens is not None
+
     # assemble layout
     layout = Layout(
         HSplit([
@@ -110,7 +148,14 @@ def question(message, **kwargs):
             ConditionalContainer(
                 Window(ic),
                 filter=~IsDone()        # pylint:disable=invalid-unary-operand-type
-            )
+            ),
+            ConditionalContainer(
+                Window(
+                    height=D.exact(2),
+                    content=FormattedTextControl(ic.get_search_string_tokens)
+                ),
+                filter=has_search_string
+            ),
         ])
     )
 
@@ -144,7 +189,24 @@ def question(message, **kwargs):
     @kb.add(Keys.Enter, eager=True)
     def set_answer(event):        # pylint:disable=unused-variable
         ic.answered = True
+        ic.search_string = None
         event.app.exit(result=ic.get_selection()[1])
+
+    def search_filter(event):
+        if ic.search_string is None:
+            ic.search_string = event.key_sequence[0].key
+        else:
+            ic.search_string += event.key_sequence[0].key
+
+    for character in string.printable:
+        kb.add(character, eager=True)(search_filter)
+
+    @kb.add(Keys.Backspace, eager=True)
+    def delete_from_search_filter(_event):        # pylint:disable=unused-variable
+        if len(ic.search_string) == 1:
+            ic.search_string = None
+        else:
+            ic.search_string = ic.search_string[:-1]
 
     return Application(
         layout=layout,
