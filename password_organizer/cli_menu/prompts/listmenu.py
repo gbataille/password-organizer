@@ -59,19 +59,27 @@ class ChoicesControl(UIControl):
         self._selected_choice: Optional[Choice] = None
         self._selected_index: int = -1
 
-        self.answered = False
+        self._answered = False
         self._search_string: Optional[str] = None
         self._choices = choices
-        self._init_choices(default=kwargs.pop('default'))
         self._cached_choices: Optional[List[Choice]] = None
+
+        self._init_choices(default=kwargs.pop('default'))
         super().__init__(**kwargs)
 
     def _init_choices(self, default=None):
         if default is not None and default not in self._choices:
-            # TODO - gbataille: exception logic
-            raise Exception("")
+            raise ValueError(f"Default value {default} is not part of the given choices")
 
         self._compute_available_choices(default=default)
+
+    @property
+    def is_answered(self) -> bool:
+        return self._answered
+
+    @is_answered.setter
+    def is_answered(self, value: bool) -> None:
+        self._answered = value
 
     def _get_available_choices(self) -> List[Choice]:
         if self._cached_choices is None:
@@ -230,7 +238,7 @@ def question(message, choices: List[Choice], default=None, qmark='?', key_bindin
 
         tokens.append(('class:question-mark', qmark))
         tokens.append(('class:question', ' %s ' % message))
-        if choices_control.answered:
+        if choices_control.is_answered:
             tokens.append(('class:answer', ' ' + choices_control.get_selection().display_text))
         else:
             tokens.append(('class:instruction', ' (Use arrow keys)'))
@@ -278,7 +286,7 @@ def question(message, choices: List[Choice], default=None, qmark='?', key_bindin
 
     @key_bindings.add(Keys.Enter, eager=True)
     def set_answer(event):        # pylint:disable=unused-variable
-        choices_control.answered = True
+        choices_control.is_answered = True
         choices_control.reset_search_string()
         event.app.exit(result=choices_control.get_selection().value)
 
