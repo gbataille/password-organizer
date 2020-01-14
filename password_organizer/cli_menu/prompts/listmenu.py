@@ -253,7 +253,8 @@ def question(message, choices: List[Choice], default=None, qmark='?', key_bindin
         HSplit([
             Window(
                 height=D.exact(1),
-                content=FormattedTextControl(get_prompt_tokens)
+                content=FormattedTextControl(get_prompt_tokens),
+                always_hide_cursor=True,
             ),
             ConditionalContainer(
                 Window(choices_control),
@@ -303,7 +304,7 @@ def question(message, choices: List[Choice], default=None, qmark='?', key_bindin
     return Application(
         layout=layout,
         key_bindings=key_bindings,
-        mouse_support=True,
+        mouse_support=False,
         style=default_style,
         **kwargs
     )
