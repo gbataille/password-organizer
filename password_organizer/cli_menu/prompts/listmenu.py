@@ -55,24 +55,84 @@ class ChoicesControl(UIControl):
     Provide a search feature by just typing the start of the entry desired
     """
     def __init__(self, choices: List[Choice], **kwargs):
-        self.selected_option_index = -1
+        # Selection to keep consistent
+        self._selected_choice: Optional[Choice] = None
+        self._selected_index: int = -1
+
         self.answered = False
         self.search_string: Optional[str] = None
-        self.choices = choices
+        self._choices = choices
         self._init_choices(default=kwargs.pop('default'))
+        self._cached_choices: Optional[List[Choice]] = None
         super().__init__(**kwargs)
 
     def _init_choices(self, default=None):
-        for i, choice in enumerate(self.choices):
-            if choice.display_text == default:
-                self.selected_option_index = i
+        if default is not None and default not in self._choices:
+            # TODO - gbataille: exception logic
+            raise Exception("")
 
-            # First non disabled choice
-            if self.selected_option_index == -1 and not choice.is_disabled:
-                self.selected_option_index = i
+        self._compute_available_choices(default=default)
+
+    def _get_available_choices(self) -> List[Choice]:
+        if self._cached_choices is None:
+            self._compute_available_choices()
+
+        return self._cached_choices or []
+
+    def _compute_available_choices(self, default: Optional[Choice] = None) -> None:
+        self._cached_choices = []
+
+        for choice in self._choices:
+            if self.search_string:
+                if choice.display_text.startswith(self.search_string):
+                    self._cached_choices.append(choice)
+            else:
+                self._cached_choices.append(choice)
+
+        if self._cached_choices == []:
+            self._selected_choice = None
+            self._selected_index = -1
+        else:
+            if default is not None:
+                self._selected_choice = default
+                self._selected_index = self._cached_choices.index(default)
+
+            if self._selected_choice not in self._cached_choices:
+                self._selected_choice = self._cached_choices[0]
+                self._selected_index = 0
+
+    def _reset_cached_choices(self) -> None:
+        self._cached_choices = None
+
+    def get_selection(self):
+        return self._selected_choice
+
+    def select_next_choice(self) -> None:
+        if not self._cached_choices or self._selected_choice is None:
+            return
+
+        def _next():
+            self._selected_index += 1
+            self._selected_choice = self._cached_choices[self._selected_index % self.choice_count]
+
+        _next()
+        while self._selected_choice.is_disabled:
+            _next()
+
+    def select_previous_choice(self) -> None:
+        if not self._cached_choices or self._selected_choice is None:
+            return
+
+        def _prev():
+            self._selected_index -= 1
+            self._selected_choice = self._cached_choices[self._selected_index % self.choice_count]
+
+        _prev()
+        while self._selected_choice.is_disabled:
+            _prev()
 
     def preferred_width(self, max_available_width: int) -> int:
-        max_elem_width = max(list(map(lambda x: x.display_length, self.choices)))
+        max_elem_width = max(list(map(lambda x: x.display_length, self._choices)))
         return min(max_elem_width, max_available_width)
 
     def preferred_height(
@@ -86,32 +146,20 @@ class ChoicesControl(UIControl):
 
     def create_content(self, width: int, height: int) -> UIContent:
         return UIContent(
-            get_line=lambda i: self._get_line_tokens(i, self.choices[i]),
+            get_line=self._get_line_tokens,
             line_count=self.choice_count,
         )
 
     @property
     def choice_count(self):
-        return len(self.choices)
+        return len(self._get_available_choices())
 
-    def _get_line_tokens(self, line_number, choice):
+    def _get_line_tokens(self, line_number):
+        # TODO - gbataille: scope it in the create_content method?
+        choice = self._get_available_choices()[line_number]
         tokens = []
 
-        if self.search_string:
-            if (
-                choice.is_separator
-                or (
-                    isinstance(choice.display_text, str)
-                    and not choice.display_text.startswith(self.search_string)
-                )
-            ):
-                if line_number == self.selected_option_index:
-                    # the current selection is masked, moving to the next visible entry
-                    # FIXME: when no choices left to display, selection is out of bound
-                    self.selected_option_index += 1
-                return
-
-        selected = (line_number == self.selected_option_index)
+        selected = (choice == self.get_selection())
 
         if selected:
             tokens.append(('class:set-cursor-position', ' \u276f '))
@@ -132,9 +180,6 @@ class ChoicesControl(UIControl):
 
         return tokens
 
-    def get_selection(self) -> Choice:
-        return self.choices[self.selected_option_index]
-
     def get_search_string_tokens(self):
         if self.search_string is None:
             return None
@@ -151,6 +196,7 @@ class ChoicesControl(UIControl):
         if self.search_string is None:
             self.search_string = ''
         self.search_string += char
+        self._reset_cached_choices()
 
     def remove_last_char_from_search_string(self) -> None:
         """ Remove the last character from the search string (~backspace) """
@@ -158,9 +204,10 @@ class ChoicesControl(UIControl):
             self.search_string = self.search_string[:-1]
         else:
             self.search_string = None
+        self._reset_cached_choices()
 
 
-def question(message, choices: List[Choice], default=0, qmark='?', key_bindings=None, **kwargs):
+def question(message, choices: List[Choice], default=None, qmark='?', key_bindings=None, **kwargs):
     """
     Paramaters
     ==========
@@ -218,21 +265,11 @@ def question(message, choices: List[Choice], default=0, qmark='?', key_bindings=
 
     @key_bindings.add(Keys.Down, eager=True)
     def move_cursor_down(_event):        # pylint:disable=unused-variable
-        def _next():
-            choices_control.selected_option_index = (
-                (choices_control.selected_option_index + 1) % choices_control.choice_count)
-        _next()
-        while choices_control.choices[choices_control.selected_option_index].is_disabled:
-            _next()
+        choices_control.select_next_choice()
 
     @key_bindings.add(Keys.Up, eager=True)
     def move_cursor_up(_event):        # pylint:disable=unused-variable
-        def _prev():
-            choices_control.selected_option_index = (
-                (choices_control.selected_option_index - 1) % choices_control.choice_count)
-        _prev()
-        while choices_control.choices[choices_control.selected_option_index].is_disabled:
-            _prev()
+        choices_control.select_previous_choice()
 
     @key_bindings.add(Keys.Enter, eager=True)
     def set_answer(event):        # pylint:disable=unused-variable

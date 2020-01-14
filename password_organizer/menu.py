@@ -2,7 +2,7 @@ from copy import deepcopy
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.shortcuts import confirm
-from typing import Callable, List, Optional, TypeVar, Union
+from typing import Callable, List, Optional, TypeVar
 
 from .cli_menu import prompt
 from .cli_menu.prompts.listmenu import Choice
@@ -49,7 +49,7 @@ def read_password(message: str) -> str:
 def list_choice_menu(
     choices: List[Choice[T]],
     message: str,
-    default: Optional[Union[int, T]] = None,
+    default: Optional[Choice[T]] = None,
     back: Optional[Callable] = None,
     quit_option_text: Optional[str] = QUIT,
     use_ctrl_c_to_quit: bool = True,
@@ -63,7 +63,7 @@ def list_choice_menu(
         A list of `ChoiceT` that the user can chose from in the menu
     message: str
         The question to be displayed at the top of the choice menu
-    default: Optional[Union[int, T]]
+    default: Optional[Choice[T]]
         The default answer
     back: Optional[Callable[]]
         The function to call if the user choses to go back

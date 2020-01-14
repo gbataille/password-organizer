@@ -137,7 +137,6 @@ class Backend(ABC):
         action: Optional[RootAction] = list_choice_menu(
             main_menu_choices,              # type:ignore  # too complex for mypy
             'What do you want to do?',
-            0,
             back=self._back,
         )
         if action is None:

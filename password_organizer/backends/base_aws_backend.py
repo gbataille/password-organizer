@@ -39,7 +39,6 @@ class BaseAWSBackend(Backend):      # pylint:disable=abstract-method
         self.region = list_choice_menu(
             [Choice.from_string(region) for region in AWS_REGIONS],
             'Which region do you want to work with?',
-            0,
             back=self._back,
         )
         if self.region is None:
