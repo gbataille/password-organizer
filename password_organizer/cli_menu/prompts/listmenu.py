@@ -155,40 +155,40 @@ class ChoicesControl(UIControl):
         return self.choice_count
 
     def create_content(self, width: int, height: int) -> UIContent:
+
+        def _get_line_tokens(line_number):
+            choice = self._get_available_choices()[line_number]
+            tokens = []
+
+            selected = (choice == self.get_selection())
+
+            if selected:
+                tokens.append(('class:set-cursor-position', ' \u276f '))
+            else:
+                # For alignment
+                tokens.append(('', '   '))
+
+            if choice.is_disabled:
+                token_text = choice.display_text
+                if choice.disabled_reason:
+                    token_text += f' ({choice.disabled_reason})'
+                tokens.append(('class:selected' if selected else 'class:disabled', token_text))
+            else:
+                try:
+                    tokens.append(('class:selected' if selected else '', str(choice.display_text)))
+                except Exception:
+                    tokens.append(('class:selected' if selected else '', choice.display_text))
+
+            return tokens
+
         return UIContent(
-            get_line=self._get_line_tokens,
+            get_line=_get_line_tokens,
             line_count=self.choice_count,
         )
 
     @property
     def choice_count(self):
         return len(self._get_available_choices())
-
-    def _get_line_tokens(self, line_number):
-        # TODO - gbataille: scope it in the create_content method?
-        choice = self._get_available_choices()[line_number]
-        tokens = []
-
-        selected = (choice == self.get_selection())
-
-        if selected:
-            tokens.append(('class:set-cursor-position', ' \u276f '))
-        else:
-            # For alignment
-            tokens.append(('', '   '))
-
-        if choice.is_disabled:
-            token_text = choice.display_text
-            if choice.disabled_reason:
-                token_text += f' ({choice.disabled_reason})'
-            tokens.append(('class:selected' if selected else 'class:disabled', token_text))
-        else:
-            try:
-                tokens.append(('class:selected' if selected else '', str(choice.display_text)))
-            except Exception:
-                tokens.append(('class:selected' if selected else '', choice.display_text))
-
-        return tokens
 
     def get_search_string_tokens(self):
         if self._search_string is None:
