@@ -100,6 +100,8 @@ class ChoicesControl(UIControl):
             if self._selected_choice not in self._cached_choices:
                 self._selected_choice = self._cached_choices[0]
                 self._selected_index = 0
+                while self._selected_choice.is_disabled:
+                    self.select_next_choice()
 
     def _reset_cached_choices(self) -> None:
         self._cached_choices = None
