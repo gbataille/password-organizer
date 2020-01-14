@@ -109,17 +109,6 @@ class ChoicesControl(UIControl):
 
         return tokens
 
-    def _get_choice_tokens(self):
-        tokens = []
-
-        # prepare the select choices
-        for i, choice in enumerate(self.choices):
-            tokens.extend(self._get_line_tokens(i, choice))
-            tokens.append(('', '\n'))
-        if tokens:
-            tokens.pop()  # Remove last newline if any
-        return tokens
-
     def get_selection(self):
         return self.choices[self.selected_option_index]
 
@@ -133,6 +122,18 @@ class ChoicesControl(UIControl):
             ('class:search', self.search_string),
             ('class:question-mark', '...'),
         ]
+
+    def append_to_search_string(self, char: str) -> None:
+        """ Appends a character to the search string """
+        self.search_string = '' if self.search_string is None else self.search_string
+        self.search_string += char
+
+    def remove_last_char_from_search_string(self) -> None:
+        """ Remove the last character from the search string (~backspace) """
+        if self.search_string and len(self.search_string) > 1:
+            self.search_string = self.search_string[:-1]
+        else:
+            self.search_string = None
 
 
 def question(message, **kwargs):
@@ -219,20 +220,14 @@ def question(message, **kwargs):
         event.app.exit(result=ic.get_selection()[1])
 
     def search_filter(event):
-        if ic.search_string is None:
-            ic.search_string = event.key_sequence[0].key
-        else:
-            ic.search_string += event.key_sequence[0].key
+        ic.append_to_search_string(event.key_sequence[0].key)
 
     for character in string.printable:
         kb.add(character, eager=True)(search_filter)
 
     @kb.add(Keys.Backspace, eager=True)
     def delete_from_search_filter(_event):        # pylint:disable=unused-variable
-        if len(ic.search_string) == 1:
-            ic.search_string = None
-        else:
-            ic.search_string = ic.search_string[:-1]
+        ic.remove_last_char_from_search_string()
 
     return Application(
         layout=layout,
