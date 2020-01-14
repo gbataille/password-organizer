@@ -13,10 +13,11 @@ from .common import default_style
 
 
 class InquirerControl(FormattedTextControl):
+    # Uses the internal logic of a FormattedTextControl that can produce some UIContent (non
+    # trivial) but manages the Control's content on the fly
     def __init__(self, choices, **kwargs):
         self.selected_option_index = 0
         self.answered = False
-        self.choices = choices
         self._init_choices(choices, kwargs.pop('default'))
         self.search_string = None
         super(InquirerControl, self).__init__(
