@@ -76,7 +76,7 @@ class BaseAWSBackend(Backend):      # pylint:disable=abstract-method
             else:
                 _title += 'None\n'
         except Exception as e:
-            _title += f' 💥 Error 💥 - {str(e)[:50]}...\n'
+            _title += f' 💥 Error 💥 - {str(e)[:50]}...'
 
         backend_description = self.backend_description()
         print(f"""
