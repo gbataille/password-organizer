@@ -45,7 +45,5 @@ def question(message, **kwargs):
         style=default_style,
         **kwargs
     )
-    # Make it look like an Application for the caller
-    session.run = session.prompt
 
-    return session
+    return session.app
