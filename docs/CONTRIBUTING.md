@@ -35,3 +35,26 @@ or
 ```bash
 ./bin/password_organizer
 ```
+
+## Adding a new backend
+
+Backends need to extend `password_organizer.backends.base.Backend` and implement its abstract
+methods. At minimum, a backend needs to be able to:
+- List the password it contains
+- Create a new password (key/value pair)
+- Retrieve an existing password
+- Updating an existing password's value
+- Deleting a password
+
+### Custom initialization
+
+If your backend need to interact with the user to initialize itself, you can do that through the
+`initialize` method that will be called after the backend is instantiated.
+
+For example, the AWS backends will ask the user in which region he wants to work at that point.
+
+### Adding actions
+
+Each menu / actions can be customized. Entries in menus can be added by overriding methods such as
+`Backend.get_root_menu_actions`. Consult the documentation of the `Backend` class to see what can be
+done.
