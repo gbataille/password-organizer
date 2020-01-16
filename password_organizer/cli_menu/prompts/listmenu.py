@@ -1,76 +1,166 @@
+from dataclasses import dataclass
 from prompt_toolkit.application import Application
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.filters import Condition, IsDone
 from prompt_toolkit.layout import Layout
-from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.layout.controls import (
+    FormattedTextControl, GetLinePrefixCallable, UIContent, UIControl
+)
 from prompt_toolkit.layout.containers import ConditionalContainer, HSplit, Window
 from prompt_toolkit.layout.dimension import LayoutDimension as D
 import string
+from typing import Generic, List, Optional, TypeVar
 
-from ..separator import Separator
 from .common import default_style
 
 
-class InquirerControl(FormattedTextControl):
-    # Uses the internal logic of a FormattedTextControl that can produce some UIContent (non
-    # trivial) but manages the Control's content on the fly
-    def __init__(self, choices, **kwargs):
-        self.selected_option_index = 0
-        self.answered = False
-        self._init_choices(choices, kwargs.pop('default'))
-        self.search_string = None
-        super(InquirerControl, self).__init__(
-            text=self._get_choice_tokens,
-            **kwargs
-        )
+T = TypeVar('T')
 
-    def _init_choices(self, choices, default=None):
-        # helper to convert from question format to internal format
-        self.choices = []  # list (name, value, disabled)
-        self.selected_option_index = -1
-        for i, c in enumerate(choices):
-            if isinstance(c, Separator):
-                self.choices.append((c, None, None))
-            else:
-                if isinstance(c, str):
-                    self.choices.append((c, c, None))
-                    if self.selected_option_index == -1:
-                        self.selected_option_index = i
-                else:
-                    name = c.get('name')
-                    value = c.get('value', name)
-                    disabled = c.get('disabled', None)
-                    self.choices.append((name, value, disabled))
-                    if value == default:
-                        self.selected_option_index = i
 
-                    if self.selected_option_index == -1 and not disabled:
-                        self.selected_option_index = i  # found the first choice
+class Separator:
+    """ Used just as a type. Not supposed to be instantiated """
+
+
+@dataclass
+class Choice(Generic[T]):
+    display_text: str
+    value: T
+    disabled_reason: Optional[str] = None
 
     @property
-    def choice_count(self):
-        return len(self.choices)
+    def is_disabled(self) -> bool:
+        return self.disabled_reason is not None
 
-    def _get_choice_tokens(self):
-        tokens = []
+    @property
+    def display_length(self) -> int:
+        return len(self.display_text)
 
-        def append(index, choice):
-            if self.search_string:
-                if (
-                    isinstance(choice[0], Separator)
-                    or (
-                        isinstance(choice[0], str)
-                        and not choice[0].startswith(self.search_string)
-                    )
-                ):
-                    if index == self.selected_option_index:
-                        # the current selection is masked, moving to the next visible entry
-                        # FIXME: when no choices left to display, selection is out of bound
-                        self.selected_option_index += 1
-                    return
+    @staticmethod
+    def separator() -> 'Choice':
+        return Choice('-' * 15, Separator, '')
 
-            selected = (index == self.selected_option_index)
+    @property
+    def is_separator(self) -> bool:
+        return self.value == Separator
+
+    @staticmethod
+    def from_string(value: str) -> 'Choice':
+        return Choice(value, value, None)
+
+
+class ChoicesControl(UIControl):
+    """
+    Menu to display some textual choices.
+    Provide a search feature by just typing the start of the entry desired
+    """
+    def __init__(self, choices: List[Choice], **kwargs):
+        # Selection to keep consistent
+        self._selected_choice: Optional[Choice] = None
+        self._selected_index: int = -1
+
+        self._answered = False
+        self._search_string: Optional[str] = None
+        self._choices = choices
+        self._cached_choices: Optional[List[Choice]] = None
+
+        self._init_choices(default=kwargs.pop('default'))
+        super().__init__(**kwargs)
+
+    def _init_choices(self, default=None):
+        if default is not None and default not in self._choices:
+            raise ValueError(f"Default value {default} is not part of the given choices")
+
+        self._compute_available_choices(default=default)
+
+    @property
+    def is_answered(self) -> bool:
+        return self._answered
+
+    @is_answered.setter
+    def is_answered(self, value: bool) -> None:
+        self._answered = value
+
+    def _get_available_choices(self) -> List[Choice]:
+        if self._cached_choices is None:
+            self._compute_available_choices()
+
+        return self._cached_choices or []
+
+    def _compute_available_choices(self, default: Optional[Choice] = None) -> None:
+        self._cached_choices = []
+
+        for choice in self._choices:
+            if self._search_string:
+                if choice.display_text.startswith(self._search_string):
+                    self._cached_choices.append(choice)
+            else:
+                self._cached_choices.append(choice)
+
+        if self._cached_choices == []:
+            self._selected_choice = None
+            self._selected_index = -1
+        else:
+            if default is not None:
+                self._selected_choice = default
+                self._selected_index = self._cached_choices.index(default)
+
+            if self._selected_choice not in self._cached_choices:
+                self._selected_choice = self._cached_choices[0]
+                self._selected_index = 0
+                while self._selected_choice.is_disabled:
+                    self.select_next_choice()
+
+    def _reset_cached_choices(self) -> None:
+        self._cached_choices = None
+
+    def get_selection(self):
+        return self._selected_choice
+
+    def select_next_choice(self) -> None:
+        if not self._cached_choices or self._selected_choice is None:
+            return
+
+        def _next():
+            self._selected_index += 1
+            self._selected_choice = self._cached_choices[self._selected_index % self.choice_count]
+
+        _next()
+        while self._selected_choice.is_disabled:
+            _next()
+
+    def select_previous_choice(self) -> None:
+        if not self._cached_choices or self._selected_choice is None:
+            return
+
+        def _prev():
+            self._selected_index -= 1
+            self._selected_choice = self._cached_choices[self._selected_index % self.choice_count]
+
+        _prev()
+        while self._selected_choice.is_disabled:
+            _prev()
+
+    def preferred_width(self, max_available_width: int) -> int:
+        max_elem_width = max(list(map(lambda x: x.display_length, self._choices)))
+        return min(max_elem_width, max_available_width)
+
+    def preferred_height(
+        self,
+        width: int,
+        max_available_height: int,
+        wrap_lines: bool,
+        get_line_prefix: Optional[GetLinePrefixCallable],
+    ) -> Optional[int]:
+        return self.choice_count
+
+    def create_content(self, width: int, height: int) -> UIContent:
+
+        def _get_line_tokens(line_number):
+            choice = self._get_available_choices()[line_number]
+            tokens = []
+
+            selected = (choice == self.get_selection())
 
             if selected:
                 tokens.append(('class:set-cursor-position', ' \u276f '))
@@ -78,140 +168,148 @@ class InquirerControl(FormattedTextControl):
                 # For alignment
                 tokens.append(('', '   '))
 
-            if choice[2]:  # disabled
-                tokens.append(('class:selected' if selected else 'class:disabled',
-                               '- %s (%s)' % (choice[0], choice[2])))
+            if choice.is_disabled:
+                token_text = choice.display_text
+                if choice.disabled_reason:
+                    token_text += f' ({choice.disabled_reason})'
+                tokens.append(('class:selected' if selected else 'class:disabled', token_text))
             else:
                 try:
-                    tokens.append(('class:selected' if selected else '', str(choice[0])))
+                    tokens.append(('class:selected' if selected else '', str(choice.display_text)))
                 except Exception:
-                    tokens.append(('class:selected' if selected else '', choice[0]))
-            tokens.append(('', '\n'))
+                    tokens.append(('class:selected' if selected else '', choice.display_text))
 
-        # prepare the select choices
-        for i, choice in enumerate(self.choices):
-            append(i, choice)
-        if tokens:
-            tokens.pop()  # Remove last newline if any
-        return tokens
+            return tokens
 
-    def get_selection(self):
-        return self.choices[self.selected_option_index]
+        return UIContent(
+            get_line=_get_line_tokens,
+            line_count=self.choice_count,
+        )
+
+    @property
+    def choice_count(self):
+        return len(self._get_available_choices())
 
     def get_search_string_tokens(self):
-        if self.search_string is None:
+        if self._search_string is None:
             return None
 
         return [
             ('', '\n'),
             ('class:question-mark', '/ '),
-            ('class:search', self.search_string),
+            ('class:search', self._search_string),
             ('class:question-mark', '...'),
         ]
 
+    def append_to_search_string(self, char: str) -> None:
+        """ Appends a character to the search string """
+        if self._search_string is None:
+            self._search_string = ''
+        self._search_string += char
+        self._reset_cached_choices()
 
-def question(message, **kwargs):
-    if 'choices' not in kwargs:
-        raise ValueError('You must provide a choices parameter')
+    def remove_last_char_from_search_string(self) -> None:
+        """ Remove the last character from the search string (~backspace) """
+        if self._search_string and len(self._search_string) > 1:
+            self._search_string = self._search_string[:-1]
+        else:
+            self._search_string = None
+        self._reset_cached_choices()
 
-    choices = kwargs.pop('choices', None)
-    default = kwargs.pop('default', 0)
-    qmark = kwargs.pop('qmark', '?')
-    kb = kwargs.pop('keybindings', KeyBindings())
+    def reset_search_string(self) -> None:
+        self._search_string = None
 
-    ic = InquirerControl(
-        choices,
-        default=default
-    )
+
+def question(message, choices: List[Choice], default=None, qmark='?', key_bindings=None, **kwargs):
+    """
+    Builds a `prompt-toolkit` Application that display a list of choices (ChoiceControl) along with
+    search features and key bindings
+
+    Paramaters
+    ==========
+    kwargs: Dict[Any, Any]
+        Any additional arguments that a prompt_toolkit.application.Application can take. Passed
+        as-is
+    """
+    if key_bindings is None:
+        key_bindings = KeyBindings()
+
+    choices_control = ChoicesControl(choices, default=default)
 
     def get_prompt_tokens():
         tokens = []
 
         tokens.append(('class:question-mark', qmark))
         tokens.append(('class:question', ' %s ' % message))
-        if ic.answered:
-            tokens.append(('class:answer', ' ' + ic.get_selection()[0]))
+        if choices_control.is_answered:
+            tokens.append(('class:answer', ' ' + choices_control.get_selection().display_text))
         else:
             tokens.append(('class:instruction', ' (Use arrow keys)'))
         return tokens
 
     @Condition
     def has_search_string():
-        return ic.get_search_string_tokens is not None
+        return choices_control.get_search_string_tokens is not None
 
-    # assemble layout
+    @key_bindings.add(Keys.ControlQ, eager=True)
+    def exit_menu(event):
+        event.app.exit(exception=KeyboardInterrupt())
+
+    if not key_bindings.get_bindings_for_keys((Keys.ControlC,)):
+        key_bindings.add(Keys.ControlC, eager=True)(exit_menu)
+
+    @key_bindings.add(Keys.Down, eager=True)
+    def move_cursor_down(_event):        # pylint:disable=unused-variable
+        choices_control.select_next_choice()
+
+    @key_bindings.add(Keys.Up, eager=True)
+    def move_cursor_up(_event):        # pylint:disable=unused-variable
+        choices_control.select_previous_choice()
+
+    @key_bindings.add(Keys.Enter, eager=True)
+    def set_answer(event):        # pylint:disable=unused-variable
+        choices_control.is_answered = True
+        choices_control.reset_search_string()
+        event.app.exit(result=choices_control.get_selection().value)
+
+    def search_filter(event):
+        choices_control.append_to_search_string(event.key_sequence[0].key)
+
+    for character in string.printable:
+        key_bindings.add(character, eager=True)(search_filter)
+
+    @key_bindings.add(Keys.Backspace, eager=True)
+    def delete_from_search_filter(_event):        # pylint:disable=unused-variable
+        choices_control.remove_last_char_from_search_string()
+
     layout = Layout(
         HSplit([
+            # Question
             Window(
                 height=D.exact(1),
-                content=FormattedTextControl(get_prompt_tokens)
+                content=FormattedTextControl(get_prompt_tokens),
+                always_hide_cursor=True,
             ),
+            # Choices
             ConditionalContainer(
-                Window(ic),
+                Window(choices_control),
                 filter=~IsDone()        # pylint:disable=invalid-unary-operand-type
             ),
+            # Searched string
             ConditionalContainer(
                 Window(
                     height=D.exact(2),
-                    content=FormattedTextControl(ic.get_search_string_tokens)
+                    content=FormattedTextControl(choices_control.get_search_string_tokens)
                 ),
-                filter=has_search_string
+                filter=has_search_string & ~IsDone()    # pylint:disable=invalid-unary-operand-type
             ),
         ])
     )
 
-    @kb.add(Keys.ControlQ, eager=True)
-    def exit_menu(event):
-        event.app.exit(exception=KeyboardInterrupt())
-
-    if not kb.get_bindings_for_keys((Keys.ControlC,)):
-        kb.add(Keys.ControlC, eager=True)(exit_menu)
-
-    @kb.add(Keys.Down, eager=True)
-    def move_cursor_down(_event):        # pylint:disable=unused-variable
-        def _next():
-            ic.selected_option_index = (
-                (ic.selected_option_index + 1) % ic.choice_count)
-        _next()
-        while isinstance(ic.choices[ic.selected_option_index][0], Separator) or\
-                ic.choices[ic.selected_option_index][2]:
-            _next()
-
-    @kb.add(Keys.Up, eager=True)
-    def move_cursor_up(_event):        # pylint:disable=unused-variable
-        def _prev():
-            ic.selected_option_index = (
-                (ic.selected_option_index - 1) % ic.choice_count)
-        _prev()
-        while isinstance(ic.choices[ic.selected_option_index][0], Separator) or \
-                ic.choices[ic.selected_option_index][2]:
-            _prev()
-
-    @kb.add(Keys.Enter, eager=True)
-    def set_answer(event):        # pylint:disable=unused-variable
-        ic.answered = True
-        ic.search_string = None
-        event.app.exit(result=ic.get_selection()[1])
-
-    def search_filter(event):
-        if ic.search_string is None:
-            ic.search_string = event.key_sequence[0].key
-        else:
-            ic.search_string += event.key_sequence[0].key
-
-    for character in string.printable:
-        kb.add(character, eager=True)(search_filter)
-
-    @kb.add(Keys.Backspace, eager=True)
-    def delete_from_search_filter(_event):        # pylint:disable=unused-variable
-        if len(ic.search_string) == 1:
-            ic.search_string = None
-        else:
-            ic.search_string = ic.search_string[:-1]
-
     return Application(
         layout=layout,
-        key_bindings=kb,
-        mouse_support=True,
+        key_bindings=key_bindings,
+        mouse_support=False,
         style=default_style,
+        **kwargs
     )

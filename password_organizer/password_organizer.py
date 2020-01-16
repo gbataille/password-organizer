@@ -3,6 +3,7 @@ from pyfiglet import Figlet
 
 from exceptions import InterruptProgramException, ExitCode
 from .menu import list_choice_menu, UserExit
+from .cli_menu.prompts.listmenu import Choice
 
 
 BACKENDS = {
@@ -25,7 +26,7 @@ def main() -> int:
 def backend_menu() -> int:
     try:
         backend_key = list_choice_menu(
-            list(BACKENDS.keys()),
+            [Choice(x, x, None) for x in BACKENDS.keys()],
             "Which backend do you want to use?"
         )
         if backend_key is None:

@@ -2,9 +2,10 @@ from copy import deepcopy
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.shortcuts import confirm
-from typing import Callable, Dict, List, Optional, TypeVar, Union
+from typing import Callable, List, Optional, TypeVar
 
-from .cli_menu import prompt, Separator
+from .cli_menu import prompt
+from .cli_menu.prompts.listmenu import Choice
 
 
 class UserExit(Exception):
@@ -12,16 +13,6 @@ class UserExit(Exception):
 
 
 T = TypeVar('T')
-# Awful type!!!
-# a choice can be
-# - a T (the type chosen by the user)
-# - a dict with
-#     - a 'name' key linked to a str, for display
-#     - a 'value' key linked to a T, for return value
-#     - an optional 'disabled' key linked to a str, to display in the choice between brackets
-# - a Separator
-# - a string (because we force the QUIT and the BACK option that are special
-Choice = Union[T, Dict[str, Union[T, str]], Separator, str]
 
 BACK = 'Back...'
 QUIT = 'Exit'
@@ -56,9 +47,9 @@ def read_password(message: str) -> str:
 
 
 def list_choice_menu(
-    choices: List[Choice],
+    choices: List[Choice[T]],
     message: str,
-    default: Optional[Union[int, T]] = None,
+    default: Optional[Choice[T]] = None,
     back: Optional[Callable] = None,
     quit_option_text: Optional[str] = QUIT,
     use_ctrl_c_to_quit: bool = True,
@@ -68,11 +59,11 @@ def list_choice_menu(
 
     Parameters
     ----------
-    choices: List[Choice]
-        A list of `Choice` that the user can chose from in the menu
+    choices: List[ChoiceT]
+        A list of `ChoiceT` that the user can chose from in the menu
     message: str
         The question to be displayed at the top of the choice menu
-    default: Optional[Union[int, T]]
+    default: Optional[Choice[T]]
         The default answer
     back: Optional[Callable[]]
         The function to call if the user choses to go back
@@ -109,9 +100,9 @@ def list_choice_menu(
 
     menu_choices = deepcopy(choices)
     if back:
-        menu_choices.extend([Separator(), BACK])
+        menu_choices.extend([Choice.separator(), Choice.from_string(BACK)])
     if quit_option_text:
-        menu_choices.extend([Separator(), quit_option_text])
+        menu_choices.extend([Choice.separator(), Choice.from_string(quit_option_text)])
 
     question_args = {
         'type': 'listmenu',
@@ -121,7 +112,7 @@ def list_choice_menu(
         'default': default,
     }
     if use_ctrl_c_to_quit:
-        question_args['keybindings'] = kb
+        question_args['key_bindings'] = kb
 
     questions = [question_args]
     answers = prompt(questions)

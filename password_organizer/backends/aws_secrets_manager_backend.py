@@ -27,6 +27,7 @@ Only simple string password are supported so far
 """
 
     def list_password_keys(self) -> List[str]:
+        # FIXME: check if it's paginated
         resp = self.secrets_cli.list_secrets()
         passwords = []
         for param in resp.get('SecretList', []):
