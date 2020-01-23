@@ -1,4 +1,4 @@
-name: password-organizer
+name: tox-build
 
 on: [push]
 

@@ -1,5 +1,7 @@
 # Password Organizer
 
+![](https://github.com/gbataille/password-organizer/workflows/tox-build/badge.svg)
+
 ## What is it?
 
 `password-organizer` is a **CLI** interactive **menu** to browse your password vault(s).
