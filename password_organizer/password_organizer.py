@@ -42,7 +42,7 @@ def backend_menu() -> int:
     try:
         module = importlib.import_module(backend_module)
         clazz = getattr(module, backend_class)
-    except Exception as e:
+    except ModuleNotFoundError as e:
         print(f"Error: \n\t{str(e)}")
         return ExitCode.CANNOT_FIND_BACKEND.value
 

@@ -174,10 +174,7 @@ class ChoicesControl(UIControl):
                     token_text += f' ({choice.disabled_reason})'
                 tokens.append(('class:selected' if selected else 'class:disabled', token_text))
             else:
-                try:
-                    tokens.append(('class:selected' if selected else '', str(choice.display_text)))
-                except Exception:
-                    tokens.append(('class:selected' if selected else '', choice.display_text))
+                tokens.append(('class:selected' if selected else '', str(choice.display_text)))
 
             return tokens
 

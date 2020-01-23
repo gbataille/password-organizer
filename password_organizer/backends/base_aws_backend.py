@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import botocore.exceptions
 import boto3
 
 from aws_constants import AWS_REGIONS
@@ -65,7 +66,7 @@ class BaseAWSBackend(Backend):      # pylint:disable=abstract-method
             account_id = self.sts_cli.get_caller_identity()['Account']
             # Spaces for manual alignment with account alias
             _title += f'   {account_id}\n'
-        except Exception as e:
+        except botocore.exceptions.ClientError as e:
             _title += f' 💥 Error 💥 - {str(e)[:50]}...\n'
 
         _title += '- Account alias: '
@@ -75,7 +76,7 @@ class BaseAWSBackend(Backend):      # pylint:disable=abstract-method
                 _title += f'{account_aliases[0]}\n'
             else:
                 _title += 'None\n'
-        except Exception as e:
+        except botocore.exceptions.ClientError as e:
             _title += f' 💥 Error 💥 - {str(e)[:50]}...'
 
         backend_description = self.backend_description()
