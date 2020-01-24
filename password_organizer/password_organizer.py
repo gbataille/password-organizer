@@ -25,8 +25,10 @@ def main() -> int:
 
 def backend_menu() -> int:
     try:
+        backends = list(BACKENDS.keys())
+        backends.sort()
         backend_key = list_choice_menu(
-            [Choice(x, x, None) for x in BACKENDS.keys()],
+            [Choice(x, x, None) for x in backends],
             "Which backend do you want to use?"
         )
         if backend_key is None:
