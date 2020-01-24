@@ -24,10 +24,13 @@ using default KMS encryption keys
 
     def list_password_keys(self) -> List[str]:
         # FIXME: only gets the first page of passwords!!!
-        resp = self.ssm_cli.describe_parameters()
+        resp = self.ssm_cli.describe_parameters(
+            MaxResults=50
+        )
         passwords = []
         for param in resp.get('Parameters', []):
             passwords.append(param.get('Name'))
+        passwords.sort()
         return passwords
 
     def retrieve_password(self, key: str) -> str:
