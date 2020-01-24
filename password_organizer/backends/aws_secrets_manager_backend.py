@@ -1,7 +1,7 @@
 import boto3
 import json
-from typing import List
 
+from .base import ListType
 from .base_aws_backend import BaseAWSBackend
 
 
@@ -26,13 +26,13 @@ Passwords are stored in Secrets Manager, in region {self.region}
 Only simple string password are supported so far
 """
 
-    def list_password_keys(self) -> List[str]:
+    def list_password_keys(self) -> ListType:
         # FIXME: check if it's paginated
         resp = self.secrets_cli.list_secrets()
         passwords = []
         for param in resp.get('SecretList', []):
             passwords.append(param.get('Name'))
-        return passwords
+        return passwords, None
 
     def retrieve_password(self, key: str) -> str:
         resp = self.secrets_cli.get_secret_value(SecretId=key)

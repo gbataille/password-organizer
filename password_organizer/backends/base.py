@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from prompt_toolkit import print_formatted_text, HTML
 from prompt_toolkit.styles import Style
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Tuple
 
 from ..menu import confirmation_menu, list_choice_menu, read_input, read_password
 from ..cli_menu.prompts.listmenu import Choice
@@ -37,6 +37,10 @@ PASSWORD_ACTION_MAPPING = {
 
 assert len(PASSWORD_ACTION_MAPPING.keys()) == len(PasswordAction)
 
+# Mypy does not support recursive types
+# https://github.com/python/mypy/issues/731
+ListType = Tuple[List[str], Optional[Callable[[], 'ListType']]]  # type:ignore
+
 
 class Backend(ABC):
 
@@ -59,12 +63,18 @@ class Backend(ABC):
         """ Outputs to STDOUT a title / description / documentation for the backend chosen """
 
     @abstractmethod
-    def list_password_keys(self) -> List[str]:
+    def list_password_keys(self) -> ListType:
         """
         Returns the list of password keys available in the backend
 
         The backend is a key/value store where the key is the password "Name/reference" and the
         value is the password itself
+
+        Returns
+        -------
+        Tuple[List[str], Optional[Callable[[], List[str]]]]:
+            - 0: a list of password keys that are available in the backend
+            - 1: an optional callable that correspond to the next page of passwords
         """
 
     @abstractmethod
@@ -144,12 +154,24 @@ class Backend(ABC):
         action_method = self.get_method_for_root_menu_action(action)
         action_method()
 
-    def _handle_list_password_action(self) -> None:
-        password_keys = self.list_password_keys()
+    def _handle_list_password_action(
+        self,
+        use_method: Optional[Callable[[], ListType]] = None
+    ) -> None:
+        if use_method is not None:
+            password_keys, next_page_method = use_method()
+        else:
+            password_keys, next_page_method = self.list_password_keys()
 
         password_action_choices: List[Choice[str]] = [
             Choice.from_string(key) for key in password_keys
         ]
+
+        NEXT_PAGE_CODE = 'next_page'
+        if next_page_method:
+            password_action_choices.append(Choice.separator())
+            password_action_choices.append(Choice('Next Page', NEXT_PAGE_CODE, None))
+
         password_key: Optional[str] = list_choice_menu(
             password_action_choices,
             'Which password do you want to work on?',
@@ -157,6 +179,9 @@ class Backend(ABC):
         )
         if password_key is None:
             return
+
+        if password_key == NEXT_PAGE_CODE:
+            return self._handle_list_password_action(use_method=next_page_method)
 
         self.password_menu(password_key)
 
