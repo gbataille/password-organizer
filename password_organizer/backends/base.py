@@ -72,9 +72,10 @@ class Backend(ABC):
 
         Returns
         -------
-        Tuple[List[str], Optional[Callable[[], List[str]]]]:
+        Tuple[List[str], Optional[Callable[[], ListType]]]:
             - 0: a list of password keys that are available in the backend
-            - 1: an optional callable that correspond to the next page of passwords
+            - 1: an optional callable that corresponds to the next page of passwords and that has
+              the same type signature as this method
         """
 
     @abstractmethod
