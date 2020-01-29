@@ -1,6 +1,7 @@
 # Password Organizer
 
 ![](https://github.com/gbataille/password-organizer/workflows/tox-build/badge.svg)
+![](https://codecov.io/github/gbataille/password-organizer/coverage.svg)
 
 ## What is it?
 
