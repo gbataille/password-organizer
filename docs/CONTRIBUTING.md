@@ -46,6 +46,11 @@ methods. At minimum, a backend needs to be able to:
 - Updating an existing password's value
 - Deleting a password
 
+### Example
+
+The [password_organizer.backends.AWSSSMBackend](../password_organizer/backends/aws_ssm_backend.py)
+is the backend with the most features and is a good place to find inspiration
+
 ### Custom initialization
 
 If your backend need to interact with the user to initialize itself, you can do that through the
