@@ -24,6 +24,7 @@ jobs:
       run: |
         tox -e lint,type,style,py,cov-report
     - uses: codecov/codecov-action@v1
+      if: matrix.python-version == 3.8
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./reports/coverage.report.xml
