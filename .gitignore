@@ -5,3 +5,5 @@ reports/*
 *.egg-info
 html
 build
+htmlcov
+__pycache__

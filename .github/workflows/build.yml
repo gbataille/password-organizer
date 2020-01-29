@@ -22,4 +22,12 @@ jobs:
         pip install tox
     - name: Run tox
       run: |
-        tox -e py,lint,type,style
+        tox -e lint,type,style,py,cov-report
+    - uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./reports/coverage.report.xml
+        # flags:
+        name: codecov
+        # yml:
+        fail_ci_if_error: false
