@@ -24,3 +24,7 @@ Vault. See [Backends](#backends) for more details about what is currently suppor
 ## Contributing
 
 Contribution are welcome. You can look up the [following instructions](./docs/CONTRIBUTING.md)
+
+## Links
+
+[Code Coverage](https://codecov.io/gh/gbataille/password-organizer)
