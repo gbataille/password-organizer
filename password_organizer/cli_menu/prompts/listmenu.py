@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from prompt_toolkit.application import Application
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
@@ -9,46 +8,14 @@ from prompt_toolkit.layout.controls import (
 )
 from prompt_toolkit.layout.containers import ConditionalContainer, HSplit, Window
 from prompt_toolkit.layout.dimension import LayoutDimension as D
+from questionary.prompts.common import Choice
 import string
-from typing import Generic, List, Optional, TypeVar
+from typing import List, Optional
 
 from .common import default_style
 
 
-T = TypeVar('T')
-
-
-class Separator:
-    """ Used just as a type. Not supposed to be instantiated """
-
-
-@dataclass
-class Choice(Generic[T]):
-    display_text: str
-    value: T
-    disabled_reason: Optional[str] = None
-
-    @property
-    def is_disabled(self) -> bool:
-        return self.disabled_reason is not None
-
-    @property
-    def display_length(self) -> int:
-        return len(self.display_text)
-
-    @staticmethod
-    def separator() -> 'Choice':
-        return Choice('-' * 15, Separator, '')
-
-    @property
-    def is_separator(self) -> bool:
-        return self.value == Separator
-
-    @staticmethod
-    def from_string(value: str) -> 'Choice':
-        return Choice(value, value, None)
-
-
+# TODO: adapt to questionary (or adapt questionary)
 class ChoicesControl(UIControl):
     """
     Menu to display some textual choices.

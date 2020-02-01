@@ -1,12 +1,12 @@
 from abc import abstractmethod
 import botocore.exceptions
 import boto3
+from questionary.prompts.common import Choice
 
 from aws_constants import AWS_REGIONS
 from exceptions import InitializationFailure, MissingAuthentication
 from . import Backend
 from ..menu import list_choice_menu
-from ..cli_menu.prompts.listmenu import Choice
 
 
 class BaseAWSBackend(Backend):      # pylint:disable=abstract-method
@@ -38,7 +38,7 @@ class BaseAWSBackend(Backend):      # pylint:disable=abstract-method
 
     def initialize(self) -> None:
         self.region = list_choice_menu(
-            [Choice.from_string(region) for region in AWS_REGIONS],
+            [Choice.build(region) for region in AWS_REGIONS],
             'Which region do you want to work with?',
             back=self._back,
         )
