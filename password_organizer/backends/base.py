@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from prompt_toolkit import print_formatted_text, HTML
 from prompt_toolkit.styles import Style
+from questionary.prompts.common import Choice, Separator
 from typing import Any, Callable, List, Optional, Tuple
 
 from ..menu import confirmation_menu, list_choice_menu, read_input, read_password
-from ..cli_menu.prompts.listmenu import Choice
 
 
 class RootAction(Enum):
@@ -94,7 +94,7 @@ class Backend(ABC):
     def delete_password(self, password_key: str) -> None:
         """ Deletes a password from the backend """
 
-    def get_root_menu_actions(self) -> List[Choice[RootAction]]:
+    def get_root_menu_actions(self) -> List[Choice]:
         """
         Returns a list of actions to present in a menu for the root menu of the backend
 
@@ -102,7 +102,7 @@ class Backend(ABC):
         If you do, remember to override `get_method_for_root_menu_action`
         """
         return [
-            Choice(member.value, member) for member in RootAction
+            Choice.build({'name': member.value, 'value': member}) for member in RootAction
         ]
 
     def get_method_for_root_menu_action(self, menu_action: Any) -> Callable:
@@ -113,7 +113,7 @@ class Backend(ABC):
         """
         return getattr(self, ROOT_ACTION_MAPPING[menu_action])
 
-    def get_password_menu_actions(self) -> List[Choice[PasswordAction]]:
+    def get_password_menu_actions(self) -> List[Choice]:
         """
         Returns a list of actions to present in a menu for the password menu of the backend
 
@@ -121,7 +121,7 @@ class Backend(ABC):
         If you do, remember to override `get_method_for_password_menu_action`
         """
         return [
-            Choice(member.value, member) for member in PasswordAction
+            Choice.build({'name': member.value, 'value': member}) for member in PasswordAction
         ]
 
     def get_method_for_password_menu_action(self, menu_action: Any) -> Callable:
@@ -164,14 +164,16 @@ class Backend(ABC):
         else:
             password_keys, next_page_method = self.list_password_keys()
 
-        password_action_choices: List[Choice[str]] = [
-            Choice.from_string(key) for key in password_keys
+        password_action_choices: List[Choice] = [
+            Choice.build(key) for key in password_keys
         ]
 
         NEXT_PAGE_CODE = 'next_page'
         if next_page_method:
-            password_action_choices.append(Choice.separator())
-            password_action_choices.append(Choice('Next Page', NEXT_PAGE_CODE, None))
+            password_action_choices.append(Separator())
+            password_action_choices.append(
+                Choice.build({'name': 'Next Page', 'value': NEXT_PAGE_CODE})
+            )
 
         password_key: Optional[str] = list_choice_menu(
             password_action_choices,
@@ -205,7 +207,7 @@ class Backend(ABC):
         password_menu_choices = self.get_password_menu_actions()
 
         password_action: Optional[PasswordAction] = list_choice_menu(
-            password_menu_choices,     # type:ignore  # too complex for mypy
+            password_menu_choices,
             f'What do you want to do with this password ({password_key})?',
             back=self.main_menu
         )

@@ -1,9 +1,9 @@
 import importlib
 from pyfiglet import Figlet
+from questionary.prompts.common import Choice
 
 from exceptions import InterruptProgramException, ExitCode
 from .menu import list_choice_menu, UserExit
-from .cli_menu.prompts.listmenu import Choice
 
 
 BACKENDS = {
@@ -20,44 +20,41 @@ def app_title():
 
 def main() -> int:
     app_title()
-    return backend_menu()
 
-
-def backend_menu() -> int:
     try:
-        backends = list(BACKENDS.keys())
-        backends.sort()
-        backend_key = list_choice_menu(
-            [Choice(x, x, None) for x in backends],
-            "Which backend do you want to use?"
-        )
-        if backend_key is None:
-            # There is no "back" option in the menu above, so this code path should not be possible
-            print("No choice, leaving...")
-            return 0
+        exit_code = backend_menu()
     except UserExit:
         print("\nGoodbye\n")
         return 0
-
-    backend_module, backend_class = BACKENDS[backend_key]
-
-    try:
-        module = importlib.import_module(backend_module)
-        clazz = getattr(module, backend_class)
     except ModuleNotFoundError as e:
         print(f"Error: \n\t{str(e)}")
         return ExitCode.CANNOT_FIND_BACKEND.value
-
-    try:
-        backend = clazz(back=backend_menu)
     except InterruptProgramException as e:
         print(f"Error: \n\t{e.display_message}")
         return e.exit_code.value
 
-    try:
-        backend.initialize()
-        backend.title()
-        return backend.main_menu()
-    except UserExit:
-        print("\nGoodbye\n")
+    return exit_code
+
+
+# Although it's a bit odd, exception handling cannot happen in this function, as it is itself passed
+# as a `back` callback and therefore should not catch any error
+def backend_menu() -> int:
+    backends = list(BACKENDS.keys())
+    backends.sort()
+    backend_key = list_choice_menu(
+        [Choice.build(x) for x in backends],
+        "Which backend do you want to use?"
+    )
+    if backend_key is None:
+        # There is no "back" option in the menu above, so this code path should not be possible
+        print("No choice, leaving...")
         return 0
+
+    backend_module, backend_class = BACKENDS[backend_key]
+    module = importlib.import_module(backend_module)
+    clazz = getattr(module, backend_class)
+
+    backend = clazz(back=backend_menu)
+    backend.initialize()
+    backend.title()
+    return backend.main_menu()
