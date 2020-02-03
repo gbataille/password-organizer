@@ -7,6 +7,8 @@ from questionary.prompt import prompt
 from questionary.prompts.common import Choice, Separator
 from typing import Any, Callable, List, Optional
 
+from .cli_menu.prompts.common import default_style
+
 
 class UserExit(Exception):
     """ Exception representing the user wanting to quit the program """
@@ -99,7 +101,7 @@ def list_choice_menu(
     #     question_args['key_bindings'] = kb
 
     questions = [question_args]
-    answers = prompt(questions)
+    answers = prompt(questions, style=default_style, use_prefix_filter_search=True)
     if not answers:
         raise UserExit()
 
