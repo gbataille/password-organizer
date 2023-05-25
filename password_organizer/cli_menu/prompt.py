@@ -15,6 +15,8 @@ def prompt(questions, answers=None, **kwargs):
             raise ValueError('you must provide a name parameter')
         if 'message' not in question:
             raise ValueError('you must provide a message parameter')
+        if 'arg2' not in question:
+            raise ValueError('you must provide a arg2 parameter')
         try:
             choices = question.get('choices')
             if choices is not None and callable(choices):
@@ -26,6 +28,7 @@ def prompt(questions, answers=None, **kwargs):
             question_type = _kwargs.pop('type')
             name = _kwargs.pop('name')
             message = _kwargs.pop('message')
+            arg2 = _kwargs.pop('arg2')
             question_when = _kwargs.pop('when', None)
             question_filter = _kwargs.pop('filter', None)
 
